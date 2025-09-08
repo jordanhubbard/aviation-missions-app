@@ -152,8 +152,9 @@
 
 (defn create-mission! [mission-data]
   (let [result (jdbc/insert! db-spec :missions 
-                 (assoc mission-data :created_at (coerce/to-timestamp (time/now))))]
-    (get-mission-by-id (-> result first val))))
+                 (assoc mission-data :created_at (coerce/to-timestamp (time/now))))
+        new-id (-> result first :generated_key)]
+    (get-mission-by-id new-id)))
 
 (defn update-mission! [id mission-data]
   (jdbc/update! db-spec :missions 
