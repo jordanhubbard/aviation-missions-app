@@ -1,0 +1,63 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  margin: 0;
+}
+
+.mission-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.mission-card:hover {
+  transform: translateY(-2px);
+}
+
+.difficulty-badge {
+  font-weight: bold;
+}
+
+.difficulty-1, .difficulty-2, .difficulty-3 {
+  background-color: #28a745 !important;
+}
+
+.difficulty-4, .difficulty-5, .difficulty-6 {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.difficulty-7, .difficulty-8, .difficulty-9, .difficulty-10 {
+  background-color: #dc3545 !important;
+}
+
+.stats-badge {
+  font-size: 0.75rem;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+}

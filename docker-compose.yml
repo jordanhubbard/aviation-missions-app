@@ -1,0 +1,20 @@
+# Removed version as it's obsolete in newer docker-compose
+
+services:
+  aviation-app:
+    build: .
+    ports:
+      - "${WEB_PORT:-8080}:8080"  # Configurable web port
+      - "${API_PORT:-3000}:3000"  # Configurable API port
+    environment:
+      - DATABASE_URL=jdbc:h2:./data/aviation-missions
+      - WEB_PORT=8080
+      - API_PORT=3000
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
