@@ -1,10 +1,21 @@
 # Aviation Mission Management Application Makefile
 
+# =============================================================================
+# PORT CONFIGURATION - Can be overridden by environment variables
+# =============================================================================
+WEB_PORT ?= 8080
+API_PORT ?= 3000
+
 .PHONY: help build start stop dev-backend dev-frontend install clean logs shell
 
 # Default target
 help:
 	@echo "Aviation Mission Management Application"
+	@echo ""
+	@echo "Port Configuration:"
+	@echo "  WEB_PORT      Web interface port (default: $(WEB_PORT))"
+	@echo "  API_PORT      Backend API port (default: $(API_PORT))"
+	@echo "  Override with: WEB_PORT=9000 API_PORT=4000 make start"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  build         Build the Docker container"
@@ -25,11 +36,11 @@ build:
 # Start the application
 start:
 	@echo "Starting Aviation Mission Management application..."
-	docker-compose up -d
+	WEB_PORT=$(WEB_PORT) API_PORT=$(API_PORT) docker-compose up -d
 	@echo "Application started!"
-	@echo "Web interface: http://localhost:8080"
-	@echo "API Documentation: http://localhost:8080/docs/"
-	@echo "API endpoint: http://localhost:3000 (direct backend access)"
+	@echo "Web interface: http://localhost:$(WEB_PORT)"
+	@echo "API Documentation: http://localhost:$(WEB_PORT)/docs/"
+	@echo "API endpoint: http://localhost:$(API_PORT) (direct backend access)"
 
 # Stop the application
 stop:
@@ -39,7 +50,7 @@ stop:
 # Development mode - backend only
 dev-backend:
 	@echo "Starting backend development server..."
-	cd backend && lein ring server-headless 3000
+	cd backend && lein ring server-headless $(API_PORT)
 
 # Development mode - frontend only
 dev-frontend:
@@ -84,4 +95,4 @@ dev-setup: install
 # Quick start for production
 production: build start
 	@echo "Production deployment started!"
-	@echo "Access the application at http://localhost:8080"
+	@echo "Access the application at http://localhost:$(WEB_PORT)"

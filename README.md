@@ -28,9 +28,28 @@ A full-stack web application for managing general aviation training missions. Bu
    ```
 
 3. **Access the application**:
-   - Web Interface: http://localhost:8080
-   - API Documentation: http://localhost:8080/docs/
-   - API Endpoint: http://localhost:3000 (for direct backend access)
+   - Web Interface: http://localhost:8080 (default, configurable via WEB_PORT)
+   - API Documentation: http://localhost:8080/docs/ (uses WEB_PORT)
+   - API Endpoint: http://localhost:3000 (default, configurable via API_PORT)
+
+### Custom Port Configuration
+
+You can override the default ports using environment variables:
+
+```bash
+# Use custom ports
+WEB_PORT=9000 API_PORT=4000 make start
+
+# Or set them permanently in your shell
+export WEB_PORT=9000
+export API_PORT=4000
+make start
+```
+
+The application will then be available at:
+- Web Interface: http://localhost:9000
+- API Documentation: http://localhost:9000/docs/
+- API Endpoint: http://localhost:4000
 
 ### Development Mode
 

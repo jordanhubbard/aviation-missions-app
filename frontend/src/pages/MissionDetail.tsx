@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, Alert, Spinner, Modal, Tab, Tabs } from 'react-bootstrap';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { missionsApi, commentsApi, reviewsApi, completionApi } from '../services/api';
-import { NewComment, NewReview, MissionCompletion } from '../types';
+import { missionsApi, commentsApi, reviewsApi, completionApi, ratingsApi } from '../services/api';
+import { NewComment, NewReview, MissionCompletion, NewRating } from '../types';
 
 const MissionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -78,6 +78,23 @@ const MissionDetail: React.FC = () => {
       }
     }
   );
+
+  const addRatingMutation = useMutation(
+    (rating: NewRating) => ratingsApi.add(missionId, rating),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['mission', missionId]);
+      }
+    }
+  );
+
+  const handleRating = (isPositive: boolean) => {
+    const rating: NewRating = {
+      pilot_name: 'anonymous-user', // For now, using anonymous user
+      rating: isPositive ? 'up' : 'down'
+    };
+    addRatingMutation.mutate(rating);
+  };
 
   const getDifficultyColor = (difficulty: number) => {
     if (difficulty <= 3) return 'success';
@@ -300,15 +317,28 @@ const MissionDetail: React.FC = () => {
                 </div>
               </div>
               <div className="mb-3">
-                <div className="d-flex justify-content-between">
-                  <span>Thumbs Up:</span>
-                  <Badge bg="success">{missionData.thumbs_up}</Badge>
-                </div>
-              </div>
-              <div className="mb-3">
-                <div className="d-flex justify-content-between">
-                  <span>Thumbs Down:</span>
-                  <Badge bg="danger">{missionData.thumbs_down}</Badge>
+                <div className="d-flex justify-content-between align-items-center">
+                  <span>Rate this mission:</span>
+                  <div className="d-flex gap-2">
+                    <Button 
+                      variant="success" 
+                      size="sm"
+                      onClick={() => handleRating(true)}
+                      disabled={addRatingMutation.isLoading}
+                    >
+                      <i className="fas fa-thumbs-up me-1"></i>
+                      {missionData.thumbs_up}
+                    </Button>
+                    <Button 
+                      variant="danger" 
+                      size="sm"
+                      onClick={() => handleRating(false)}
+                      disabled={addRatingMutation.isLoading}
+                    >
+                      <i className="fas fa-thumbs-down me-1"></i>
+                      {missionData.thumbs_down}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card.Body>
