@@ -23,12 +23,14 @@
         why-line (first (filter #(str/starts-with? % "Why:") lines))
         notes-line (first (filter #(str/starts-with? % "Notes:") lines))
         route-line (first (filter #(str/starts-with? % "Route:") lines))
+        suggested-route-line (first (filter #(str/starts-with? % "Suggested Route:") lines))
         
         objective (when objective-line (str/trim (subs objective-line 10)))
         mission-desc (when mission-line (str/trim (subs mission-line 8)))
         why-desc (when why-line (str/trim (subs why-line 4)))
         notes (when notes-line (str/trim (subs notes-line 6)))
-        route (when route-line (str/trim (subs route-line 6)))]
+        route (when route-line (str/trim (subs route-line 6)))
+        suggested-route (when suggested-route-line (str/trim (subs suggested-route-line 16)))]
     
     (when (and title objective mission-desc why-desc)
       {:title (str/trim title)
@@ -37,7 +39,8 @@
        :mission_description mission-desc
        :why_description why-desc
        :notes notes
-       :route route})))
+       :route route
+       :suggested_route suggested-route})))
 
 (defn determine-category [title]
   "Determine mission category based on title and content"
@@ -111,6 +114,7 @@
                  (not (str/starts-with? trimmed-line "Why:"))
                  (not (str/starts-with? trimmed-line "Notes:"))
                  (not (str/starts-with? trimmed-line "Route:"))
+                 (not (str/starts-with? trimmed-line "Suggested Route:"))
                  (not (str/starts-with? trimmed-line "Debrief:"))
                  (or (str/includes? trimmed-line "difficulty:")
                      (and (> (count trimmed-line) 10)

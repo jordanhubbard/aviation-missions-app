@@ -23,6 +23,7 @@
         why_description TEXT NOT NULL,
         notes TEXT,
         route VARCHAR(500),
+        suggested_route VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )"])

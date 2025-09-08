@@ -5,6 +5,8 @@
             [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.util.response :refer [response status]]
             [aviation-missions.db :as db]
             [aviation-missions.handlers :as handlers]
@@ -52,6 +54,8 @@
 
 (def app
   (-> app-routes
+      wrap-keyword-params
+      wrap-params
       (wrap-cors :access-control-allow-origin [#".*"]
                  :access-control-allow-methods [:get :post :put :delete :options]
                  :access-control-allow-headers ["Content-Type" "Authorization"])

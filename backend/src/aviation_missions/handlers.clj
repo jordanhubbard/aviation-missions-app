@@ -6,8 +6,17 @@
 ;; Admin authentication middleware
 (defn admin-required [handler]
   (fn [request]
-    (let [auth-header (get-in request [:headers "authorization"])
-          token (when auth-header (str/replace auth-header #"Bearer " ""))]
+    (println "DEBUG: Full request headers:" (:headers request))
+    (let [auth-header (or (get-in request [:headers "authorization"])
+                         (get-in request [:headers "Authorization"]))
+          token (when auth-header 
+                  (-> auth-header
+                      (str/replace #"Bearer " "")
+                      (str/replace #"bearer " "")
+                      str/trim))]
+      (println "DEBUG: Auth header:" auth-header)
+      (println "DEBUG: Extracted token:" token)
+      (println "DEBUG: Token validation:" (when token (db/validate-admin-session token)))
       (if (and token (db/validate-admin-session token))
         (handler request)
         (-> (response {:error "Admin authentication required"})
