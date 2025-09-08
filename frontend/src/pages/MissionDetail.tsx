@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, Alert, Spinner, Modal, Tab, Tabs } from 'react-bootstrap';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { missionsApi, commentsApi, reviewsApi, completionApi, ratingsApi } from '../services/api';
+import { missionsApi, commentsApi, reviewsApi, completionApi, ratingsApi, isAdmin } from '../services/api';
 import { NewComment, NewReview, MissionCompletion, NewRating } from '../types';
+import PrintableMissionCard from '../components/PrintableMissionCard';
 
 const MissionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ const MissionDetail: React.FC = () => {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Form states
@@ -146,6 +148,14 @@ const MissionDetail: React.FC = () => {
                 </Badge>
               </div>
               <div>
+                {isAdmin() && (
+                  <Link 
+                    to={`/missions/${missionId}/edit`}
+                    className="btn btn-warning btn-sm me-2"
+                  >
+                    <i className="fas fa-edit me-1"></i>Edit Mission
+                  </Link>
+                )}
                 <Button 
                   variant="success" 
                   size="sm" 
@@ -165,9 +175,17 @@ const MissionDetail: React.FC = () => {
                 <Button 
                   variant="outline-primary" 
                   size="sm"
+                  className="me-2"
                   onClick={() => setShowCommentModal(true)}
                 >
                   <i className="fas fa-comment me-1"></i>Add Comment
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  size="sm"
+                  onClick={() => setShowPrintModal(true)}
+                >
+                  <i className="fas fa-print me-1"></i>Print Card
                 </Button>
               </div>
             </Card.Header>
@@ -484,6 +502,33 @@ const MissionDetail: React.FC = () => {
             disabled={!completionForm.pilot_name || !completionForm.completion_date || markCompletedMutation.isLoading}
           >
             {markCompletedMutation.isLoading ? 'Marking...' : 'Mark Completed'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Print Mission Card Modal */}
+      <Modal show={showPrintModal} onHide={() => setShowPrintModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="fas fa-print me-2"></i>
+            Printable Mission Card
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-0">
+          <div className="d-print-block">
+            <PrintableMissionCard mission={missionData} />
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="d-print-none">
+          <Button variant="secondary" onClick={() => setShowPrintModal(false)}>
+            Close
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => window.print()}
+          >
+            <i className="fas fa-print me-1"></i>
+            Print Card
           </Button>
         </Modal.Footer>
       </Modal>

@@ -1,0 +1,94 @@
+/* Print styles for mission cards */
+@media print {
+  /* Hide everything except the printable content */
+  body * {
+    visibility: hidden;
+  }
+  
+  .d-print-block, .d-print-block * {
+    visibility: visible;
+  }
+  
+  .d-print-none {
+    display: none !important;
+  }
+  
+  /* Print-specific styling for mission cards */
+  .mission-card-printable {
+    page-break-after: always;
+    box-shadow: none !important;
+    border: 2px solid #000 !important;
+    margin: 0;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .mission-card-printable .card-header {
+    background-color: #007bff !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .mission-card-printable .text-primary {
+    color: #007bff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .mission-card-printable .bg-light {
+    background-color: #f8f9fa !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .mission-card-printable .border {
+    border: 1px solid #000 !important;
+  }
+  
+  .mission-card-printable .border-bottom {
+    border-bottom: 1px solid #000 !important;
+  }
+  
+  .mission-card-printable .border-top {
+    border-top: 1px solid #000 !important;
+  }
+  
+  /* Ensure badges print with colors */
+  .badge {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Position the printable content */
+  .d-print-block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Page margins */
+  @page {
+    margin: 0.5in;
+    size: letter;
+  }
+}
+
+/* Screen styles for better card display */
+.mission-card-printable {
+  max-width: 100%;
+}
+
+.mission-card-printable .card-body {
+  font-size: 0.9rem;
+}
+
+.mission-card-printable h3 {
+  font-size: 1.2rem;
+}
+
+.mission-card-printable h5 {
+  font-size: 1rem;
+}
