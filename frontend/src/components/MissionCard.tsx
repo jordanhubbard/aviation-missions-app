@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Badge, Row, Col } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mission } from '../types';
 
 interface MissionCardProps {
@@ -8,6 +8,8 @@ interface MissionCardProps {
 }
 
 const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
+  const navigate = useNavigate();
+  
   const getDifficultyColor = (difficulty: number) => {
     if (difficulty <= 3) return 'success';
     if (difficulty <= 6) return 'warning';
@@ -16,6 +18,12 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
 
   const formatCategory = (category: string) => {
     return category.replace(/&/g, '&');
+  };
+
+  const handleStatClick = (action: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(`/missions/${mission.id}?action=${action}`);
   };
 
 
@@ -84,7 +92,12 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
         <div className="mt-auto pt-2 border-top flex-shrink-0">
           <Row className="g-1 align-items-center text-center">
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center" title="Comments">
+              <div 
+                className="d-flex flex-column align-items-center" 
+                title="Click to add comment"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => handleStatClick('comment', e)}
+              >
                 <div className="d-flex align-items-center">
                   <i className="fas fa-comments text-primary me-1" style={{ fontSize: '0.75rem' }}></i>
                   <Badge bg="primary" className="stats-badge rounded-pill px-2">
@@ -97,7 +110,12 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               </div>
             </Col>
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center" title="Completions">
+              <div 
+                className="d-flex flex-column align-items-center" 
+                title="Click to mark completed"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => handleStatClick('complete', e)}
+              >
                 <div className="d-flex align-items-center">
                   <i className="fas fa-check text-success me-1" style={{ fontSize: '0.75rem' }}></i>
                   <Badge bg="success" className="stats-badge rounded-pill px-2">
@@ -110,7 +128,12 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               </div>
             </Col>
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center" title="Thumbs Up">
+              <div 
+                className="d-flex flex-column align-items-center" 
+                title="View likes and reviews"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => handleStatClick('reviews', e)}
+              >
                 <div className="d-flex align-items-center">
                   <i className="fas fa-thumbs-up text-success me-1" style={{ fontSize: '0.75rem' }}></i>
                   <Badge bg="success" className="stats-badge rounded-pill px-2">
@@ -123,7 +146,12 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               </div>
             </Col>
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center" title="Thumbs Down">
+              <div 
+                className="d-flex flex-column align-items-center" 
+                title="View dislikes and reviews"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => handleStatClick('reviews', e)}
+              >
                 <div className="d-flex align-items-center">
                   <i className="fas fa-thumbs-down text-danger me-1" style={{ fontSize: '0.75rem' }}></i>
                   <Badge bg="danger" className="stats-badge rounded-pill px-2">

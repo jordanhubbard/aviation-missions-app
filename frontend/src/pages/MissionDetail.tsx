@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, Alert, Spinner, Modal, Tab, Tabs } from 'react-bootstrap';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { missionsApi, commentsApi, reviewsApi, completionApi, ratingsApi, isAdmin } from '../services/api';
@@ -10,12 +10,39 @@ const MissionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const missionId = parseInt(id || '0');
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Handle URL parameters to auto-open modals
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action) {
+      switch (action) {
+        case 'comment':
+          setShowCommentModal(true);
+          break;
+        case 'complete':
+          setShowCompletionModal(true);
+          break;
+        case 'review':
+          setShowReviewModal(true);
+          break;
+        case 'comments':
+          setActiveTab('comments');
+          break;
+        case 'reviews':
+          setActiveTab('reviews');
+          break;
+      }
+      // Clear the search param after opening the modal
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Form states
   const [commentForm, setCommentForm] = useState<NewComment>({ author_name: '', content: '' });
