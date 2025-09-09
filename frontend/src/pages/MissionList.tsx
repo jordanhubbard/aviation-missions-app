@@ -77,13 +77,16 @@ const MissionList: React.FC = () => {
       </Row>
 
       {/* Filters */}
-      <Row className="mb-4">
-        <Col md={4}>
+      <Row className="mb-4 g-3">
+        <Col lg={4} md={6} sm={12}>
           <Form.Group>
-            <Form.Label>Category</Form.Label>
+            <Form.Label className="fw-semibold">
+              <i className="fas fa-filter me-2 text-primary"></i>Category
+            </Form.Label>
             <Form.Select 
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
+              size="lg"
             >
               <option value="">All Categories</option>
               {categories.map(cat => (
@@ -93,12 +96,15 @@ const MissionList: React.FC = () => {
           </Form.Group>
         </Col>
         
-        <Col md={4}>
+        <Col lg={4} md={6} sm={12}>
           <Form.Group>
-            <Form.Label>Difficulty Level</Form.Label>
+            <Form.Label className="fw-semibold">
+              <i className="fas fa-star me-2 text-warning"></i>Difficulty Level
+            </Form.Label>
             <Form.Select 
               value={filters.difficulty}
               onChange={(e) => handleFilterChange('difficulty', e.target.value)}
+              size="lg"
             >
               <option value="">All Difficulties</option>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(diff => (
@@ -108,12 +114,15 @@ const MissionList: React.FC = () => {
           </Form.Group>
         </Col>
         
-        <Col md={4}>
+        <Col lg={4} md={12} sm={12}>
           <Form.Group>
-            <Form.Label>Sort By</Form.Label>
+            <Form.Label className="fw-semibold">
+              <i className="fas fa-sort me-2 text-info"></i>Sort By
+            </Form.Label>
             <Form.Select 
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
+              size="lg"
             >
               <option value="difficulty">Difficulty</option>
               <option value="title">Title</option>
@@ -134,9 +143,9 @@ const MissionList: React.FC = () => {
       </Row>
 
       {/* Mission Cards */}
-      <Row>
+      <Row className="g-3">
         {data?.map((mission: Mission) => (
-          <Col key={mission.id} lg={4} md={6} className="mb-4">
+          <Col key={mission.id} xl={4} lg={6} md={6} sm={12} xs={12}>
             <MissionCard mission={mission} />
           </Col>
         ))}

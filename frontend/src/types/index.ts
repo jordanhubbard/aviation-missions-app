@@ -8,6 +8,7 @@ export interface Mission {
   why_description: string;
   notes?: string;
   route?: string;
+  suggested_route?: string;
   comment_count: number;
   completion_count: number;
   thumbs_up: number;

@@ -219,9 +219,24 @@ const MissionDetail: React.FC = () => {
                   {missionData.route && (
                     <div className="mb-4">
                       <h5 className="text-primary">
-                        <i className="fas fa-route me-2"></i>Suggested Route
+                        <i className="fas fa-route me-2"></i>Route Description
                       </h5>
                       <p className="font-monospace bg-light p-3 rounded">{missionData.route}</p>
+                    </div>
+                  )}
+
+                  {missionData.suggested_route && (
+                    <div className="mb-4">
+                      <h5 className="text-primary">
+                        <i className="fas fa-map-marked-alt me-2"></i>ICAO Route
+                      </h5>
+                      <div className="bg-primary bg-opacity-10 p-3 rounded">
+                        <p className="font-monospace fs-5 mb-2 text-center">{missionData.suggested_route}</p>
+                        <small className="text-muted d-block text-center">
+                          <i className="fas fa-info-circle me-1"></i>
+                          Copy these ICAO codes into your flight planning app or GPS
+                        </small>
+                      </div>
                     </div>
                   )}
 

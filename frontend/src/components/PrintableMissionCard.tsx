@@ -60,9 +60,21 @@ const PrintableMissionCard: React.FC<PrintableMissionCardProps> = ({ mission, cl
             {mission.route && (
               <div className="mb-3">
                 <h5 className="text-primary">
-                  <i className="fas fa-route me-2"></i>Route
+                  <i className="fas fa-route me-2"></i>Route Description
                 </h5>
                 <p className="font-monospace small bg-light p-2 rounded">{mission.route}</p>
+              </div>
+            )}
+
+            {mission.suggested_route && (
+              <div className="mb-3">
+                <h5 className="text-primary">
+                  <i className="fas fa-map-marked-alt me-2"></i>ICAO Route
+                </h5>
+                <div className="border border-primary p-2 rounded text-center">
+                  <p className="font-monospace fw-bold fs-5 mb-1">{mission.suggested_route}</p>
+                  <small className="text-muted">Copy to flight planning app</small>
+                </div>
               </div>
             )}
           </Col>
