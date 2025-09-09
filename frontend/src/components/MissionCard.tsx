@@ -112,9 +112,9 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
             <Col xs={3}>
               <div 
                 className="d-flex flex-column align-items-center" 
-                title="Click to mark completed"
+                title="Click to view completions"
                 style={{ cursor: 'pointer' }}
-                onClick={(e) => handleStatClick('complete', e)}
+                onClick={(e) => handleStatClick('completions', e)}
               >
                 <div className="d-flex align-items-center">
                   <i className="fas fa-check text-success me-1" style={{ fontSize: '0.75rem' }}></i>

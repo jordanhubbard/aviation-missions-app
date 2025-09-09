@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Mission, Comment, Review, Submission, MissionUpdate, NewMissionSubmission, NewComment, NewReview, NewRating, MissionCompletion, AdminSession } from '../types';
+import { Mission, Comment, Review, Submission, MissionUpdate, NewMissionSubmission, NewComment, NewReview, NewRating, MissionCompletion, Completion, AdminSession } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -75,6 +75,9 @@ export const ratingsApi = {
 
 // Mission completion API
 export const completionApi = {
+  getForMission: (missionId: number) => 
+    api.get<{ completions: Completion[] }>(`/missions/${missionId}/completed`),
+  
   markCompleted: (missionId: number, completion: MissionCompletion) => 
     api.post(`/missions/${missionId}/completed`, completion),
 };

@@ -208,6 +208,10 @@
            :created_at (coerce/to-timestamp (time/now)))))
 
 ;; Completion tracking
+(defn get-completions-for-mission [mission-id]
+  (jdbc/query db-spec
+    ["SELECT * FROM mission_completions WHERE mission_id = ? ORDER BY created_at DESC" mission-id]))
+
 (defn mark-mission-completed! [mission-id completion-data]
   (jdbc/insert! db-spec :mission_completions
     (assoc completion-data 

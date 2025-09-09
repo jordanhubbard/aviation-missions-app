@@ -217,6 +217,19 @@
       (-> (response {:error "Failed to get rating" :details (.getMessage e)})
           (status 500)))))
 
+(defn get-completions [id]
+  "Get all completions for a mission"
+  (try
+    (let [mission-id (Integer/parseInt id)]
+      (if (db/get-mission-by-id mission-id)
+        (let [completions (db/get-completions-for-mission mission-id)]
+          (response {:completions completions}))
+        (-> (response {:error "Mission not found"})
+            (status 404))))
+    (catch Exception e
+      (-> (response {:error "Failed to fetch completions" :details (.getMessage e)})
+          (status 500)))))
+
 (defn mark-completed [id request]
   "Mark a mission as completed by a pilot"
   (try

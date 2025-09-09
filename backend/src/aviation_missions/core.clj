@@ -32,6 +32,7 @@
   (POST "/missions/:id/rating" [id :as request] (handlers/add-rating id request))
   (GET "/missions/:id/rating/:pilot_name" [id pilot_name] (handlers/get-user-rating id pilot_name))
   (POST "/missions/:id/completed" [id :as request] (handlers/mark-completed id request))
+  (GET "/missions/:id/completed" [id] (handlers/get-completions id))
   
   ;; Mission submission endpoints
   (POST "/submissions" request (handlers/create-submission request))

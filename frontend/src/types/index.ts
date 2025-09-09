@@ -115,3 +115,12 @@ export interface MissionCompletion {
   completion_date: string;
   notes?: string;
 }
+
+export interface Completion {
+  id: number;
+  mission_id: number;
+  pilot_name: string;
+  completion_date: string;
+  notes?: string;
+  created_at: string;
+}

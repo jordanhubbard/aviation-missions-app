@@ -38,6 +38,9 @@ const MissionDetail: React.FC = () => {
         case 'reviews':
           setActiveTab('reviews');
           break;
+        case 'completions':
+          setActiveTab('completions');
+          break;
       }
       // Clear the search param after opening the modal
       setSearchParams({});
@@ -72,6 +75,12 @@ const MissionDetail: React.FC = () => {
     { select: (response) => response.data.reviews }
   );
 
+  const { data: completions } = useQuery(
+    ['completions', missionId],
+    () => completionApi.getForMission(missionId),
+    { select: (response) => response.data.completions }
+  );
+
   // Mutations
   const addCommentMutation = useMutation(
     (comment: NewComment) => commentsApi.add(missionId, comment),
@@ -102,6 +111,7 @@ const MissionDetail: React.FC = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['mission', missionId]);
+        queryClient.invalidateQueries(['completions', missionId]);
         setCompletionForm({ pilot_name: '', completion_date: new Date().toISOString().split('T')[0], notes: '' });
         setShowCompletionModal(false);
       }
@@ -360,6 +370,55 @@ const MissionDetail: React.FC = () => {
                     <Alert variant="light">
                       <i className="fas fa-star me-2"></i>
                       No reviews yet. Fly this mission and share your experience!
+                    </Alert>
+                  )}
+                </Tab>
+
+                <Tab eventKey="completions" title={`Completions (${completions?.length || 0})`}>
+                  <div className="mb-3">
+                    <Button 
+                      variant="success"
+                      onClick={() => setShowCompletionModal(true)}
+                    >
+                      <i className="fas fa-check me-2"></i>Mark Completed
+                    </Button>
+                  </div>
+                  
+                  {completions && completions.length > 0 ? (
+                    completions.map(completion => (
+                      <Card key={completion.id} className="mb-3">
+                        <Card.Body>
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                              <strong>{completion.pilot_name}</strong>
+                              <Badge bg="success" className="ms-2">
+                                <i className="fas fa-check me-1"></i>Completed
+                              </Badge>
+                            </div>
+                            <div className="text-end">
+                              <small className="text-muted d-block">
+                                Completed: {new Date(completion.completion_date).toLocaleDateString()}
+                              </small>
+                              <small className="text-muted">
+                                Logged: {new Date(completion.created_at).toLocaleDateString()}
+                              </small>
+                            </div>
+                          </div>
+                          {completion.notes && (
+                            <div className="mt-2">
+                              <small className="text-muted d-block mb-1">
+                                <i className="fas fa-sticky-note me-1"></i>Notes:
+                              </small>
+                              <p className="mb-0">{completion.notes}</p>
+                            </div>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    ))
+                  ) : (
+                    <Alert variant="light">
+                      <i className="fas fa-check me-2"></i>
+                      No completions yet. Be the first to complete this mission!
                     </Alert>
                   )}
                 </Tab>
