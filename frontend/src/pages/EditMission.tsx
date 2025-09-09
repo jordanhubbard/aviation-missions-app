@@ -37,20 +37,25 @@ const EditMission: React.FC = () => {
     () => missionsApi.getById(missionId),
     { 
       select: (response) => response.data.mission,
-      onSuccess: (mission) => {
-        setFormData({
-          title: mission.title,
-          category: mission.category,
-          difficulty: mission.difficulty,
-          objective: mission.objective,
-          mission_description: mission.mission_description,
-          why_description: mission.why_description,
-          notes: mission.notes,
-          route: mission.route
-        });
-      }
+      enabled: missionId > 0
     }
   );
+
+  // Populate form data when mission data is loaded
+  useEffect(() => {
+    if (missionData) {
+      setFormData({
+        title: missionData.title || '',
+        category: missionData.category || '',
+        difficulty: missionData.difficulty || 5,
+        objective: missionData.objective || '',
+        mission_description: missionData.mission_description || '',
+        why_description: missionData.why_description || '',
+        notes: missionData.notes || '',
+        route: missionData.route || ''
+      });
+    }
+  }, [missionData]);
 
   const updateMutation = useMutation(
     (updatedData: Partial<Mission>) => missionsApi.update(missionId, updatedData),
