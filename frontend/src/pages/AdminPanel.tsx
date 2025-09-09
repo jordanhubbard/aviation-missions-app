@@ -9,7 +9,7 @@ const AdminPanel: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: submissions, isLoading } = useQuery(
+  const { data: submissions, isLoading, error } = useQuery(
     'submissions',
     () => submissionsApi.getAll(),
     { select: (response) => response.data.submissions }
@@ -64,6 +64,11 @@ const AdminPanel: React.FC = () => {
   const pendingSubmissions = submissions?.filter(s => s.status === 'pending') || [];
   const reviewedSubmissions = submissions?.filter(s => s.status !== 'pending') || [];
 
+  // Debug logging
+  console.log('Submissions data:', submissions);
+  console.log('Pending submissions:', pendingSubmissions);
+  console.log('Reviewed submissions:', reviewedSubmissions);
+
   if (isLoading) {
     return (
       <Container className="text-center py-5">
@@ -71,6 +76,18 @@ const AdminPanel: React.FC = () => {
           <span className="visually-hidden">Loading...</span>
         </div>
         <p className="mt-3">Loading submissions...</p>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container>
+        <Alert variant="danger">
+          <Alert.Heading>Error Loading Submissions</Alert.Heading>
+          <p>There was an error loading the submissions. Please check that you are logged in as admin and try again.</p>
+          <p className="small text-muted">Error: {(error as any)?.response?.data?.error || (error as any)?.message || 'Unknown error'}</p>
+        </Alert>
       </Container>
     );
   }

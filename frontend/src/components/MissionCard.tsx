@@ -135,7 +135,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
                 onClick={(e) => handleStatClick('reviews', e)}
               >
                 <div className="d-flex align-items-center">
-                  <i className="fas fa-thumbs-up text-success me-1" style={{ fontSize: '0.75rem' }}></i>
+                  <span style={{ fontSize: '0.9rem', marginRight: '2px' }}>👍</span>
                   <Badge bg="success" className="stats-badge rounded-pill px-2">
                     {mission.thumbs_up}
                   </Badge>
@@ -153,7 +153,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
                 onClick={(e) => handleStatClick('reviews', e)}
               >
                 <div className="d-flex align-items-center">
-                  <i className="fas fa-thumbs-down text-danger me-1" style={{ fontSize: '0.75rem' }}></i>
+                  <span style={{ fontSize: '0.9rem', marginRight: '2px' }}>👎</span>
                   <Badge bg="danger" className="stats-badge rounded-pill px-2">
                     {mission.thumbs_down}
                   </Badge>

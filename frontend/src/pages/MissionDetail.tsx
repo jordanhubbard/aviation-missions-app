@@ -452,22 +452,22 @@ const MissionDetail: React.FC = () => {
                   <span>Rate this mission:</span>
                   <div className="d-flex gap-2">
                     <Button 
-                      variant="success" 
+                      variant="outline-success" 
                       size="sm"
                       onClick={() => handleRating(true)}
                       disabled={addRatingMutation.isLoading}
+                      style={{ fontSize: '1.2rem', minWidth: '60px' }}
                     >
-                      <i className="fas fa-thumbs-up me-1"></i>
-                      {missionData.thumbs_up}
+                      👍 {missionData.thumbs_up}
                     </Button>
                     <Button 
-                      variant="danger" 
+                      variant="outline-danger" 
                       size="sm"
                       onClick={() => handleRating(false)}
                       disabled={addRatingMutation.isLoading}
+                      style={{ fontSize: '1.2rem', minWidth: '60px' }}
                     >
-                      <i className="fas fa-thumbs-down me-1"></i>
-                      {missionData.thumbs_down}
+                      👎 {missionData.thumbs_down}
                     </Button>
                   </div>
                 </div>
