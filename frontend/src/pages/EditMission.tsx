@@ -137,6 +137,28 @@ const EditMission: React.FC = () => {
 
   return (
     <Container>
+      <Row className="mb-4">
+        <Col>
+          <div className="d-flex align-items-center mb-3">
+            <Link to={`/missions/${missionId}`} className="btn btn-primary me-3">
+              <i className="fas fa-arrow-left me-2"></i>Back to Mission
+            </Link>
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb mb-0">
+                <li className="breadcrumb-item">
+                  <Link to="/" className="text-decoration-none">Missions</Link>
+                </li>
+                <li className="breadcrumb-item">
+                  <Link to={`/missions/${missionId}`} className="text-decoration-none">Mission Details</Link>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Edit Mission
+                </li>
+              </ol>
+            </nav>
+          </div>
+        </Col>
+      </Row>
       <Row className="justify-content-center">
         <Col lg={8}>
           <Card className="shadow-sm">
@@ -146,10 +168,6 @@ const EditMission: React.FC = () => {
                 Edit Mission
               </h2>
               <div>
-                <Link to={`/missions/${missionId}`} className="btn btn-outline-secondary me-2">
-                  <i className="fas fa-arrow-left me-1"></i>
-                  Back to Mission
-                </Link>
                 <Button 
                   variant="danger" 
                   onClick={handleDelete}

@@ -129,9 +129,21 @@ const MissionDetail: React.FC = () => {
     <Container>
       <Row className="mb-4">
         <Col>
-          <Link to="/" className="btn btn-outline-secondary mb-3">
-            <i className="fas fa-arrow-left me-2"></i>Back to Missions
-          </Link>
+          <div className="d-flex align-items-center mb-3">
+            <Link to="/" className="btn btn-primary me-3">
+              <i className="fas fa-arrow-left me-2"></i>Back to Missions
+            </Link>
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb mb-0">
+                <li className="breadcrumb-item">
+                  <Link to="/" className="text-decoration-none">Missions</Link>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Mission Details
+                </li>
+              </ol>
+            </nav>
+          </div>
         </Col>
       </Row>
 

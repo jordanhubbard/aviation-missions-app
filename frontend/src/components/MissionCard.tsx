@@ -23,8 +23,8 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
   };
 
   return (
-    <Card className="h-100 mission-card shadow-sm border-0 overflow-hidden">
-      <Card.Header className="bg-light border-0 py-2 px-3">
+    <Card className="h-100 mission-card shadow-sm border-0" style={{ maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+      <Card.Header className="bg-light border-0 py-2 px-3 flex-shrink-0">
         <Row className="align-items-center g-2">
           <Col xs="auto">
             <Badge 
@@ -45,24 +45,24 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
         </Row>
       </Card.Header>
       
-      <Card.Body className="p-3 d-flex flex-column">
-        <Card.Title className="h5 mb-3 lh-sm">
+      <Card.Body className="p-3 d-flex flex-column flex-grow-1" style={{ overflow: 'hidden' }}>
+        <Card.Title className="h5 mb-3 lh-sm flex-shrink-0">
           <Link 
             to={`/missions/${mission.id}`} 
-            className="text-decoration-none text-dark stretched-link"
+            className="text-decoration-none text-dark"
           >
             {mission.title}
           </Link>
         </Card.Title>
         
-        <div className="mb-3 flex-grow-1">
+        <div className="mb-3 flex-grow-1" style={{ overflow: 'auto', minHeight: '0' }}>
           <p className="text-muted small mb-2 lh-sm">
             <i className="fas fa-bullseye text-primary me-2"></i>
-            <strong>Objective:</strong> {truncateText(mission.objective, 85)}
+            <strong>Objective:</strong> {mission.objective}
           </p>
           
           <p className="small text-secondary mb-3 lh-sm">
-            {truncateText(mission.mission_description, 100)}
+            {mission.mission_description}
           </p>
           
           {mission.suggested_route && (
@@ -79,50 +79,62 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
           {mission.route && (
             <p className="text-info small mb-0 lh-sm">
               <i className="fas fa-route me-1"></i>
-              <strong>Route:</strong> {truncateText(mission.route, 50)}
+              <strong>Route:</strong> {mission.route}
             </p>
           )}
         </div>
         
-        <div className="mt-auto pt-2 border-top">
+        <div className="mt-auto pt-2 border-top flex-shrink-0">
           <Row className="g-1 align-items-center text-center">
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center">
-                <Badge bg="primary" className="stats-badge rounded-pill px-2">
-                  {mission.comment_count}
-                </Badge>
-                <small className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>
-                  <i className="fas fa-comments"></i>
+              <div className="d-flex flex-column align-items-center" title="Comments">
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-comments text-primary me-1" style={{ fontSize: '0.75rem' }}></i>
+                  <Badge bg="primary" className="stats-badge rounded-pill px-2">
+                    {mission.comment_count}
+                  </Badge>
+                </div>
+                <small className="text-muted mt-1" style={{ fontSize: '0.6rem', lineHeight: '1' }}>
+                  Comments
                 </small>
               </div>
             </Col>
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center">
-                <Badge bg="success" className="stats-badge rounded-pill px-2">
-                  {mission.completion_count}
-                </Badge>
-                <small className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>
-                  <i className="fas fa-check"></i>
+              <div className="d-flex flex-column align-items-center" title="Completions">
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-check text-success me-1" style={{ fontSize: '0.75rem' }}></i>
+                  <Badge bg="success" className="stats-badge rounded-pill px-2">
+                    {mission.completion_count}
+                  </Badge>
+                </div>
+                <small className="text-muted mt-1" style={{ fontSize: '0.6rem', lineHeight: '1' }}>
+                  Completed
                 </small>
               </div>
             </Col>
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center">
-                <Badge bg="success" className="stats-badge rounded-pill px-2">
-                  {mission.thumbs_up}
-                </Badge>
-                <small className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>
-                  <i className="fas fa-thumbs-up"></i>
+              <div className="d-flex flex-column align-items-center" title="Thumbs Up">
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-thumbs-up text-success me-1" style={{ fontSize: '0.75rem' }}></i>
+                  <Badge bg="success" className="stats-badge rounded-pill px-2">
+                    {mission.thumbs_up}
+                  </Badge>
+                </div>
+                <small className="text-muted mt-1" style={{ fontSize: '0.6rem', lineHeight: '1' }}>
+                  Likes
                 </small>
               </div>
             </Col>
             <Col xs={3}>
-              <div className="d-flex flex-column align-items-center">
-                <Badge bg="danger" className="stats-badge rounded-pill px-2">
-                  {mission.thumbs_down}
-                </Badge>
-                <small className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>
-                  <i className="fas fa-thumbs-down"></i>
+              <div className="d-flex flex-column align-items-center" title="Thumbs Down">
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-thumbs-down text-danger me-1" style={{ fontSize: '0.75rem' }}></i>
+                  <Badge bg="danger" className="stats-badge rounded-pill px-2">
+                    {mission.thumbs_down}
+                  </Badge>
+                </div>
+                <small className="text-muted mt-1" style={{ fontSize: '0.6rem', lineHeight: '1' }}>
+                  Dislikes
                 </small>
               </div>
             </Col>
