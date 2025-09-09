@@ -202,24 +202,24 @@ const MissionDetail: React.FC = () => {
                     to={`/missions/${missionId}/edit`}
                     className="btn btn-warning btn-sm me-2"
                   >
-                    <i className="fas fa-edit me-1"></i>Edit Mission
+                    <i className="fas fa-edit me-1"></i>Edit
                   </Link>
                 )}
                 <Button 
                   variant="success" 
-                  size="sm" 
+                  size="sm"
                   className="me-2"
                   onClick={() => setShowCompletionModal(true)}
                 >
-                  <i className="fas fa-check me-1"></i>Mark Completed
+                  <i className="fas fa-check me-1"></i>I did this
                 </Button>
                 <Button 
                   variant="primary" 
-                  size="sm" 
+                  size="sm"
                   className="me-2"
                   onClick={() => setShowReviewModal(true)}
                 >
-                  <i className="fas fa-star me-1"></i>Add Review
+                  <i className="fas fa-star me-1"></i>Review
                 </Button>
                 <Button 
                   variant="outline-primary" 
@@ -227,7 +227,7 @@ const MissionDetail: React.FC = () => {
                   className="me-2"
                   onClick={() => setShowCommentModal(true)}
                 >
-                  <i className="fas fa-comment me-1"></i>Add Comment
+                  <i className="fas fa-comment me-1"></i>Comment
                 </Button>
                 <Button 
                   variant="outline-secondary" 
