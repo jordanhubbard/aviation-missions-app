@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Badge, Row, Col } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Mission } from '../types';
 
 interface MissionCardProps {
@@ -26,9 +26,16 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
     navigate(`/missions/${mission.id}?action=${action}`);
   };
 
+  const handleCardClick = () => {
+    navigate(`/missions/${mission.id}`);
+  };
 
   return (
-    <Card className="h-100 mission-card shadow-sm border-0" style={{ maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+    <Card 
+      className="h-100 mission-card shadow-sm border-0" 
+      style={{ maxHeight: '400px', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+      onClick={handleCardClick}
+    >
       <Card.Header className="bg-light border-0 py-2 px-3 flex-shrink-0">
         <Row className="align-items-center g-2">
           <Col xs="auto">
@@ -51,13 +58,8 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
       </Card.Header>
       
       <Card.Body className="p-3 d-flex flex-column flex-grow-1" style={{ overflow: 'hidden' }}>
-        <Card.Title className="h5 mb-3 lh-sm flex-shrink-0">
-          <Link 
-            to={`/missions/${mission.id}`} 
-            className="text-decoration-none text-dark"
-          >
-            {mission.title}
-          </Link>
+        <Card.Title className="h5 mb-3 lh-sm flex-shrink-0 text-dark">
+          {mission.title}
         </Card.Title>
         
         <div className="mb-3 flex-grow-1" style={{ overflow: 'auto', minHeight: '0' }}>
