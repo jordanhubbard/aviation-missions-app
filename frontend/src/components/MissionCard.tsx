@@ -18,9 +18,6 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
     return category.replace(/&/g, '&');
   };
 
-  const truncateText = (text: string, maxLength: number) => {
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-  };
 
   return (
     <Card className="h-100 mission-card shadow-sm border-0" style={{ maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
