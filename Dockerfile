@@ -22,8 +22,8 @@ RUN npm run build
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 
-# Install nginx and wget for serving frontend and downloading Swagger UI
-RUN apk add --no-cache nginx wget
+# Install nginx, wget, and curl for serving frontend and health checks
+RUN apk add --no-cache nginx wget curl
 
 # Copy backend jar
 COPY --from=backend-build /app/backend/target/uberjar/aviation-missions-*-standalone.jar /app/aviation-missions.jar

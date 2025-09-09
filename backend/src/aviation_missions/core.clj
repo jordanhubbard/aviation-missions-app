@@ -36,12 +36,12 @@
   
   ;; Mission submission endpoints
   (POST "/submissions" request (handlers/create-submission request))
-  (GET "/submissions" [] ((handlers/admin-required handlers/get-submissions) []))
+  (GET "/submissions" request ((handlers/admin-required handlers/get-submissions) request))
   (PUT "/submissions/:id/approve" [id] ((handlers/admin-required handlers/approve-submission) id))
   (PUT "/submissions/:id/reject" [id] ((handlers/admin-required handlers/reject-submission) id))
   
   ;; Mission update endpoints
-  (GET "/updates" [] ((handlers/admin-required handlers/get-mission-updates) []))
+  (GET "/updates" request ((handlers/admin-required handlers/get-mission-updates) request))
   (PUT "/updates/:id/approve" [id] ((handlers/admin-required handlers/approve-mission-update) id))
   (PUT "/updates/:id/reject" [id] ((handlers/admin-required handlers/reject-mission-update) id))
   

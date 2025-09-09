@@ -41,7 +41,6 @@ http {
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_pass_request_headers on;
         }
 
         # Health check endpoint
@@ -74,7 +73,21 @@ window.onload = function() {
 EOF
 
 # Start the Clojure backend in the background
+echo "Starting Clojure backend..."
 java -jar /app/aviation-missions.jar &
 
+# Wait for backend to be ready
+echo "Waiting for backend to be ready..."
+sleep 5
+
+# Test backend connectivity
+echo "Testing backend connectivity..."
+until curl -f http://localhost:${API_PORT}/health > /dev/null 2>&1; do
+    echo "Waiting for backend to respond..."
+    sleep 2
+done
+echo "Backend is ready!"
+
 # Start nginx in the foreground
+echo "Starting nginx..."
 nginx -g "daemon off;"
