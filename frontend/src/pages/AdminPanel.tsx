@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Table, Button, Badge, Modal, Alert, Tab, Tabs } from 'react-bootstrap';
+import React, { useState, useRef } from 'react';
+import { Container, Row, Col, Card, Table, Button, Badge, Modal, Alert, Tab, Tabs, Form } from 'react-bootstrap';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { submissionsApi } from '../services/api';
-import { Submission } from '../types';
+import { submissionsApi, importExportApi } from '../services/api';
+import { Submission, Mission } from '../types';
 
 const AdminPanel: React.FC = () => {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: submissions, isLoading, error } = useQuery(
@@ -36,6 +40,69 @@ const AdminPanel: React.FC = () => {
       }
     }
   );
+
+  const exportMutation = useMutation(
+    () => importExportApi.exportMissions(),
+    {
+      onSuccess: (response) => {
+        const data = JSON.stringify(response.data, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `missions-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    }
+  );
+
+  const importMutation = useMutation(
+    (missions: Mission[]) => importExportApi.importMissions(missions),
+    {
+      onSuccess: (response) => {
+        setImportResult(response.data.message);
+        setShowImportModal(false);
+        setImportFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        // Refresh any relevant data
+        queryClient.invalidateQueries('missions');
+      },
+      onError: (error: any) => {
+        setImportResult(`Error: ${error.response?.data?.error || error.message}`);
+      }
+    }
+  );
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImportFile(file);
+    }
+  };
+
+  const handleImport = () => {
+    if (!importFile) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonData = JSON.parse(e.target?.result as string);
+        if (jsonData.missions && Array.isArray(jsonData.missions)) {
+          importMutation.mutate(jsonData.missions);
+        } else {
+          setImportResult('Error: Invalid file format. Expected JSON with "missions" array.');
+        }
+      } catch (error) {
+        setImportResult('Error: Invalid JSON file.');
+      }
+    };
+    reader.readAsText(importFile);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -96,15 +163,50 @@ const AdminPanel: React.FC = () => {
     <Container fluid>
       <Row className="mb-4">
         <Col>
-          <h1 className="display-5">
-            <i className="fas fa-cogs me-3"></i>
-            Admin Panel
-          </h1>
-          <p className="lead text-muted">
-            Review and manage mission submissions
-          </p>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h1 className="display-5">
+                <i className="fas fa-cogs me-3"></i>
+                Admin Panel
+              </h1>
+              <p className="lead text-muted">
+                Review and manage mission submissions
+              </p>
+            </div>
+            <div className="d-flex gap-2">
+              <Button 
+                variant="outline-primary" 
+                onClick={() => exportMutation.mutate()}
+                disabled={exportMutation.isLoading}
+              >
+                <i className="fas fa-download me-2"></i>
+                {exportMutation.isLoading ? 'Exporting...' : 'Export Missions'}
+              </Button>
+              <Button 
+                variant="outline-success" 
+                onClick={() => setShowImportModal(true)}
+              >
+                <i className="fas fa-upload me-2"></i>
+                Import Missions
+              </Button>
+            </div>
+          </div>
         </Col>
       </Row>
+
+      {importResult && (
+        <Row className="mb-3">
+          <Col>
+            <Alert 
+              variant={importResult.includes('Error') ? 'danger' : 'success'} 
+              dismissible 
+              onClose={() => setImportResult(null)}
+            >
+              {importResult}
+            </Alert>
+          </Col>
+        </Row>
+      )}
 
       <Tabs defaultActiveKey="pending" className="mb-4">
         <Tab eventKey="pending" title={`Pending Review (${pendingSubmissions.length})`}>
@@ -351,6 +453,77 @@ const AdminPanel: React.FC = () => {
               </Button>
             </>
           )}
+        </Modal.Footer>
+      </Modal>
+
+      {/* Import Missions Modal */}
+      <Modal show={showImportModal} onHide={() => setShowImportModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="fas fa-upload me-2"></i>Import Missions
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-muted mb-3">
+            Upload a JSON file containing missions to import. The file should have the format:
+          </p>
+          <pre className="bg-light p-3 rounded small">
+{`{
+  "missions": [
+    {
+      "title": "Mission Title",
+      "category": "Category",
+      "difficulty": 5,
+      "objective": "Mission objective",
+      "mission_description": "Description",
+      "why_description": "Why description",
+      "pilot_experience": "Beginner (< 100 hours)",
+      "recommended_aircraft": "Cessna 172",
+      "notes": "Optional notes",
+      "route": "Optional route"
+    }
+  ]
+}`}
+          </pre>
+          
+          <Form.Group className="mb-3">
+            <Form.Label>Select JSON File</Form.Label>
+            <Form.Control
+              type="file"
+              accept=".json"
+              onChange={handleFileSelect}
+              ref={fileInputRef}
+            />
+          </Form.Group>
+          
+          {importFile && (
+            <Alert variant="info">
+              <i className="fas fa-file-alt me-2"></i>
+              Selected: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button 
+            variant="secondary" 
+            onClick={() => {
+              setShowImportModal(false);
+              setImportFile(null);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="success" 
+            onClick={handleImport}
+            disabled={!importFile || importMutation.isLoading}
+          >
+            <i className="fas fa-upload me-2"></i>
+            {importMutation.isLoading ? 'Importing...' : 'Import Missions'}
+          </Button>
         </Modal.Footer>
       </Modal>
     </Container>

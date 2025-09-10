@@ -26,7 +26,9 @@ const EditMission: React.FC = () => {
     mission_description: '',
     why_description: '',
     notes: '',
-    route: ''
+    route: '',
+    pilot_experience: 'Beginner (< 100 hours)',
+    recommended_aircraft: 'N/A'
   });
 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -52,7 +54,9 @@ const EditMission: React.FC = () => {
         mission_description: missionData.mission_description || '',
         why_description: missionData.why_description || '',
         notes: missionData.notes || '',
-        route: missionData.route || ''
+        route: missionData.route || '',
+        pilot_experience: missionData.pilot_experience || 'Beginner (< 100 hours)',
+        recommended_aircraft: missionData.recommended_aircraft || 'N/A'
       });
     }
   }, [missionData]);
@@ -291,6 +295,40 @@ const EditMission: React.FC = () => {
                     Optional: Suggested flight route or airports
                   </Form.Text>
                 </Form.Group>
+
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Pilot Experience Level *</Form.Label>
+                      <Form.Select
+                        value={formData.pilot_experience || 'Beginner (< 100 hours)'}
+                        onChange={(e) => handleInputChange('pilot_experience', e.target.value)}
+                        required
+                      >
+                        <option value="Beginner (< 100 hours)">Beginner (&lt; 100 hours)</option>
+                        <option value="Intermediate (100 - 1000 hours)">Intermediate (100 - 1000 hours)</option>
+                        <option value="Advanced (1000+ hours)">Advanced (1000+ hours)</option>
+                      </Form.Select>
+                      <Form.Text className="text-muted">
+                        Recommended minimum pilot experience level
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Recommended Aircraft</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.recommended_aircraft || ''}
+                        onChange={(e) => handleInputChange('recommended_aircraft', e.target.value)}
+                        placeholder="e.g., Cessna 172, Piper Cherokee, N/A"
+                      />
+                      <Form.Text className="text-muted">
+                        Specific aircraft recommendation or "N/A" for no preference
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                </Row>
 
                 <Form.Group className="mb-4">
                   <Form.Label>Additional Notes</Form.Label>

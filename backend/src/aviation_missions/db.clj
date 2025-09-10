@@ -24,9 +24,26 @@
         notes TEXT,
         route VARCHAR(500),
         suggested_route VARCHAR(500),
+        pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
+        recommended_aircraft VARCHAR(255) DEFAULT 'N/A',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )"])
+  
+  ;; Add new columns to existing missions table if they don't exist
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE missions ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
+    (catch Exception e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE missions ADD COLUMN recommended_aircraft VARCHAR(255) DEFAULT 'N/A'"])
+    (catch Exception e
+      ;; Column already exists, ignore
+      ))
   
   (jdbc/execute! db-spec
     ["CREATE TABLE IF NOT EXISTS comments (
@@ -82,6 +99,8 @@
         why_description TEXT NOT NULL,
         notes TEXT,
         route VARCHAR(500),
+        pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
+        recommended_aircraft VARCHAR(255) DEFAULT 'N/A',
         submitter_name VARCHAR(100) NOT NULL,
         submitter_email VARCHAR(255),
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -89,6 +108,21 @@
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         reviewed_at TIMESTAMP
       )"])
+  
+  ;; Add new columns to existing submissions table if they don't exist
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE submissions ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
+    (catch Exception e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE submissions ADD COLUMN recommended_aircraft VARCHAR(255) DEFAULT 'N/A'"])
+    (catch Exception e
+      ;; Column already exists, ignore
+      ))
   
   (jdbc/execute! db-spec
     ["CREATE TABLE IF NOT EXISTS mission_updates (
@@ -102,6 +136,8 @@
         why_description TEXT NOT NULL,
         notes TEXT,
         route VARCHAR(500),
+        pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
+        recommended_aircraft VARCHAR(255) DEFAULT 'N/A',
         submitter_name VARCHAR(100) NOT NULL,
         submitter_email VARCHAR(255),
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -110,6 +146,21 @@
         reviewed_at TIMESTAMP,
         FOREIGN KEY (mission_id) REFERENCES missions(id) ON DELETE CASCADE
       )"])
+  
+  ;; Add new columns to existing mission_updates table if they don't exist
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE mission_updates ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
+    (catch Exception e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE mission_updates ADD COLUMN recommended_aircraft VARCHAR(255) DEFAULT 'N/A'"])
+    (catch Exception e
+      ;; Column already exists, ignore
+      ))
   
   (jdbc/execute! db-spec
     ["CREATE TABLE IF NOT EXISTS admin_sessions (
@@ -232,7 +283,8 @@
     (when submission
       ;; Create mission from submission
       (create-mission! (select-keys submission [:title :category :difficulty :objective 
-                                                :mission_description :why_description :notes :route]))
+                                                :mission_description :why_description :notes :route
+                                                :pilot_experience :recommended_aircraft]))
       ;; Update submission status
       (jdbc/update! db-spec :submissions 
         {:status "approved" :reviewed_at (coerce/to-timestamp (time/now))}
@@ -294,3 +346,34 @@
   (first (jdbc/query db-spec
     ["SELECT admin_name FROM admin_sessions 
       WHERE session_token = ? AND expires_at > CURRENT_TIMESTAMP" token])))
+
+;; JSON Import/Export functions
+(defn export-all-missions []
+  "Export all missions as a vector of maps for JSON serialization"
+  (jdbc/query db-spec
+    ["SELECT id, title, category, difficulty, objective, mission_description, 
+             why_description, notes, route, suggested_route, pilot_experience, 
+             recommended_aircraft, created_at, updated_at 
+      FROM missions ORDER BY id"]))
+
+(defn import-missions! [missions-data]
+  "Import missions from JSON data. Returns count of imported missions."
+  (let [imported-count (atom 0)]
+    (doseq [mission missions-data]
+      (try
+        (jdbc/insert! db-spec :missions
+          {:title (:title mission)
+           :category (:category mission)
+           :difficulty (:difficulty mission)
+           :objective (:objective mission)
+           :mission_description (:mission_description mission)
+           :why_description (:why_description mission)
+           :notes (:notes mission)
+           :route (:route mission)
+           :suggested_route (:suggested_route mission)
+           :pilot_experience (or (:pilot_experience mission) "Beginner (< 100 hours)")
+           :recommended_aircraft (or (:recommended_aircraft mission) "N/A")})
+        (swap! imported-count inc)
+        (catch Exception e
+          (println "Failed to import mission:" (:title mission) "Error:" (.getMessage e)))))
+    @imported-count))

@@ -289,6 +289,36 @@ const MissionDetail: React.FC = () => {
                     </div>
                   )}
 
+                  <Row className="mb-4">
+                    <Col md={6}>
+                      <div className="mb-4">
+                        <h5 className="text-primary">
+                          <i className="fas fa-user-graduate me-2"></i>Pilot Experience Level
+                        </h5>
+                        <Badge 
+                          bg={missionData.pilot_experience.includes('Beginner') ? 'success' : 
+                              missionData.pilot_experience.includes('Intermediate') ? 'warning' : 'danger'} 
+                          className="fs-6 px-3 py-2"
+                        >
+                          {missionData.pilot_experience}
+                        </Badge>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-4">
+                        <h5 className="text-primary">
+                          <i className="fas fa-plane me-2"></i>Recommended Aircraft
+                        </h5>
+                        <p className="lead">
+                          {missionData.recommended_aircraft === 'N/A' ? 
+                            <em className="text-muted">No specific recommendation</em> : 
+                            missionData.recommended_aircraft
+                          }
+                        </p>
+                      </div>
+                    </Col>
+                  </Row>
+
                   {missionData.notes && (
                     <div className="mb-4">
                       <h5 className="text-primary">

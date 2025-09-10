@@ -19,6 +19,11 @@
   
   ;; Mission endpoints
   (GET "/missions" [] handlers/get-missions)
+  
+  ;; JSON Import/Export endpoints (admin only) - must come before /missions/:id
+  (GET "/missions/export" request ((handlers/admin-required handlers/export-missions) request))
+  (POST "/missions/import" request ((handlers/admin-required handlers/import-missions) request))
+  
   (GET "/missions/:id" [id] (handlers/get-mission id))
   (POST "/missions" request (handlers/create-mission request))
   (PUT "/missions/:id" [id :as request] (handlers/update-mission id request))

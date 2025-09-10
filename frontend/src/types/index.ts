@@ -9,6 +9,8 @@ export interface Mission {
   notes?: string;
   route?: string;
   suggested_route?: string;
+  pilot_experience: string;
+  recommended_aircraft: string;
   comment_count: number;
   completion_count: number;
   thumbs_up: number;
@@ -48,6 +50,8 @@ export interface Submission {
   why_description: string;
   notes?: string;
   route?: string;
+  pilot_experience: string;
+  recommended_aircraft: string;
   submitter_name: string;
   submitter_email?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -67,6 +71,8 @@ export interface MissionUpdate {
   why_description: string;
   notes?: string;
   route?: string;
+  pilot_experience: string;
+  recommended_aircraft: string;
   submitter_name: string;
   submitter_email?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -90,6 +96,8 @@ export interface NewMissionSubmission {
   why_description: string;
   notes?: string;
   route?: string;
+  pilot_experience: string;
+  recommended_aircraft: string;
   submitter_name: string;
   submitter_email?: string;
 }
@@ -123,4 +131,20 @@ export interface Completion {
   completion_date: string;
   notes?: string;
   created_at: string;
+}
+
+// Pilot experience levels
+export type PilotExperience = 
+  | 'Beginner (< 100 hours)' 
+  | 'Intermediate (100 - 1000 hours)' 
+  | 'Advanced (1000+ hours)';
+
+// Import/Export interfaces
+export interface MissionExport {
+  missions: Mission[];
+}
+
+export interface ImportResult {
+  message: string;
+  imported_count: number;
 }

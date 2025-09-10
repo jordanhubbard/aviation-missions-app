@@ -84,10 +84,32 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
           )}
           
           {mission.route && (
-            <p className="text-info small mb-0 lh-sm">
+            <p className="text-info small mb-2 lh-sm">
               <i className="fas fa-route me-1"></i>
               <strong>Route:</strong> {mission.route}
             </p>
+          )}
+          
+          <div className="d-flex justify-content-between align-items-center small text-muted mb-1">
+            <div className="d-flex align-items-center">
+              <i className="fas fa-user-graduate me-1"></i>
+              <span className="fw-bold me-1">Experience:</span>
+              <Badge 
+                bg={mission.pilot_experience.includes('Beginner') ? 'success' : 
+                    mission.pilot_experience.includes('Intermediate') ? 'warning' : 'danger'} 
+                className="small"
+              >
+                {mission.pilot_experience.split(' ')[0]}
+              </Badge>
+            </div>
+          </div>
+          
+          {mission.recommended_aircraft && mission.recommended_aircraft !== 'N/A' && (
+            <div className="d-flex align-items-center small text-muted mb-0">
+              <i className="fas fa-plane me-1"></i>
+              <span className="fw-bold me-1">Aircraft:</span>
+              <span>{mission.recommended_aircraft}</span>
+            </div>
           )}
         </div>
         

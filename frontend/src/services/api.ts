@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Mission, Comment, Review, Submission, MissionUpdate, NewMissionSubmission, NewComment, NewReview, NewRating, MissionCompletion, Completion, AdminSession } from '../types';
+import { Mission, Comment, Review, Submission, MissionUpdate, NewMissionSubmission, NewComment, NewReview, NewRating, MissionCompletion, Completion, AdminSession, MissionExport, ImportResult } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -113,6 +113,15 @@ export const updatesApi = {
 export const adminApi = {
   login: (credentials: { admin_name: string; password: string }) => 
     api.post<AdminSession>('/admin/login', credentials),
+};
+
+// Import/Export API
+export const importExportApi = {
+  exportMissions: () => 
+    api.get<MissionExport>('/missions/export'),
+  
+  importMissions: (missions: Mission[]) => 
+    api.post<ImportResult>('/missions/import', { missions }),
 };
 
 export const isAdmin = () => !!adminToken;

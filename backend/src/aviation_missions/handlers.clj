@@ -344,3 +344,28 @@
     (catch Exception e
       (-> (response {:error "Failed to reject update" :details (.getMessage e)})
           (status 500)))))
+
+;; JSON Import/Export handlers
+(defn export-missions [request]
+  "Export all missions as JSON"
+  (try
+    (let [missions (db/export-all-missions)]
+      (response {:missions missions}))
+    (catch Exception e
+      (-> (response {:error "Failed to export missions" :details (.getMessage e)})
+          (status 500)))))
+
+(defn import-missions [request]
+  "Import missions from JSON"
+  (try
+    (let [import-data (:body request)
+          missions (:missions import-data)]
+      (if (and missions (vector? missions))
+        (let [imported-count (db/import-missions! missions)]
+          (response {:message (str "Successfully imported " imported-count " missions")
+                    :imported_count imported-count}))
+        (-> (response {:error "Invalid format. Expected {\"missions\": [...]}"})
+            (status 400))))
+    (catch Exception e
+      (-> (response {:error "Failed to import missions" :details (.getMessage e)})
+          (status 500)))))
