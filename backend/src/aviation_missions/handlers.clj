@@ -24,11 +24,13 @@
     (let [params (:params request)
           category (:category params)
           difficulty (:difficulty params)
+          pilot-experience (:pilot_experience params)
           sort-by (:sort params "difficulty")
           missions (db/get-all-missions)
           filtered-missions (cond->> missions
                               category (filter #(= (:category %) category))
-                              difficulty (filter #(= (:difficulty %) (Integer/parseInt difficulty))))]
+                              difficulty (filter #(= (:difficulty %) (Integer/parseInt difficulty)))
+                              pilot-experience (filter #(= (:pilot_experience %) pilot-experience)))]
       (response {:missions filtered-missions}))
     (catch Exception e
       (-> (response {:error "Failed to fetch missions" :details (.getMessage e)})

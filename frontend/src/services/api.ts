@@ -30,7 +30,7 @@ if (adminToken) {
 
 // Mission API
 export const missionsApi = {
-  getAll: (params?: { category?: string; difficulty?: number; sort?: string }) => 
+  getAll: (params?: { category?: string; difficulty?: number; pilot_experience?: string; sort?: string }) => 
     api.get<{ missions: Mission[] }>('/missions', { params }),
   
   getById: (id: number) => 

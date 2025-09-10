@@ -24,6 +24,11 @@
                           :in "query"
                           :type "integer"
                           :description "Filter by difficulty level (1-10)"}
+                         {:name "pilot_experience"
+                          :in "query"
+                          :type "string"
+                          :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]
+                          :description "Filter by pilot experience level"}
                          {:name "sort"
                           :in "query"
                           :type "string"
@@ -42,6 +47,33 @@
                               :schema {:type "object"
                                       :properties {:mission {:$ref "#/definitions/Mission"}}}}
                          400 {:description "Invalid input"}}}}
+      
+      "/missions/export"
+      {:get {:summary "Export all missions"
+             :description "Export all missions as JSON (admin only)"
+             :security [{"BearerAuth" []}]
+             :responses {200 {:description "Missions exported successfully"
+                             :schema {:type "object"
+                                     :properties {:missions {:type "array"
+                                                            :items {:$ref "#/definitions/Mission"}}}}}
+                        401 {:description "Admin authentication required"}}}}
+      
+      "/missions/import"
+      {:post {:summary "Import missions from JSON"
+              :description "Import missions from JSON data (admin only)"
+              :security [{"BearerAuth" []}]
+              :parameters [{:name "import_data"
+                           :in "body"
+                           :required true
+                           :schema {:type "object"
+                                   :properties {:missions {:type "array"
+                                                          :items {:$ref "#/definitions/ImportMission"}}}}}]
+              :responses {200 {:description "Missions imported successfully"
+                              :schema {:type "object"
+                                      :properties {:message {:type "string"}
+                                                  :imported_count {:type "integer"}}}}
+                         400 {:description "Invalid import data"}
+                         401 {:description "Admin authentication required"}}}}
       
       "/missions/{id}"
       {:get {:summary "Get mission by ID"
@@ -151,15 +183,19 @@
                    :why_description {:type "string"}
                    :notes {:type "string"}
                    :route {:type "string"}
+                   :suggested_route {:type "string"}
+                   :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
+                   :recommended_aircraft {:type "string"}
                    :comment_count {:type "integer"}
                    :completion_count {:type "integer"}
-                   :avg_rating {:type "number"}
+                   :thumbs_up {:type "integer"}
+                   :thumbs_down {:type "integer"}
                    :created_at {:type "string" :format "date-time"}
                    :updated_at {:type "string" :format "date-time"}}}
       
       :NewMission
       {:type "object"
-       :required [:title :category :difficulty :objective :mission_description :why_description]
+       :required [:title :category :difficulty :objective :mission_description :why_description :pilot_experience]
        :properties {:title {:type "string"}
                    :category {:type "string"}
                    :difficulty {:type "integer" :minimum 1 :maximum 10}
@@ -167,7 +203,9 @@
                    :mission_description {:type "string"}
                    :why_description {:type "string"}
                    :notes {:type "string"}
-                   :route {:type "string"}}}
+                   :route {:type "string"}
+                   :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
+                   :recommended_aircraft {:type "string" :default "N/A"}}}
       
       :Comment
       {:type "object"
@@ -212,6 +250,8 @@
                    :why_description {:type "string"}
                    :notes {:type "string"}
                    :route {:type "string"}
+                   :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
+                   :recommended_aircraft {:type "string"}
                    :submitter_name {:type "string"}
                    :submitter_email {:type "string"}
                    :status {:type "string" :enum ["pending" "approved" "rejected"]}
@@ -221,7 +261,7 @@
       
       :NewSubmission
       {:type "object"
-       :required [:title :category :difficulty :objective :mission_description :why_description :submitter_name]
+       :required [:title :category :difficulty :objective :mission_description :why_description :pilot_experience :submitter_name]
        :properties {:title {:type "string"}
                    :category {:type "string"}
                    :difficulty {:type "integer" :minimum 1 :maximum 10}
@@ -230,5 +270,29 @@
                    :why_description {:type "string"}
                    :notes {:type "string"}
                    :route {:type "string"}
+                   :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
+                   :recommended_aircraft {:type "string" :default "N/A"}
                    :submitter_name {:type "string"}
-                   :submitter_email {:type "string"}}}}}))
+                   :submitter_email {:type "string"}}}
+      
+      :ImportMission
+      {:type "object"
+       :required [:title :category :difficulty :objective :mission_description :why_description]
+       :properties {:title {:type "string"}
+                   :category {:type "string"}
+                   :difficulty {:type "integer" :minimum 1 :maximum 10}
+                   :objective {:type "string"}
+                   :mission_description {:type "string"}
+                   :why_description {:type "string"}
+                   :notes {:type "string"}
+                   :route {:type "string"}
+                   :suggested_route {:type "string"}
+                   :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"] :default "Beginner (< 100 hours)"}
+                   :recommended_aircraft {:type "string" :default "N/A"}}}}
+     
+     :securityDefinitions
+     {:BearerAuth
+      {:type "apiKey"
+       :name "Authorization"
+       :in "header"
+       :description "JWT token for admin authentication. Format: Bearer <token>"}}}))

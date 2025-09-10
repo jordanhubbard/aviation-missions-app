@@ -9,6 +9,7 @@ const MissionList: React.FC = () => {
   const [filters, setFilters] = useState({
     category: '',
     difficulty: '',
+    pilot_experience: '',
     sort: 'difficulty'
   });
 
@@ -17,6 +18,7 @@ const MissionList: React.FC = () => {
     () => missionsApi.getAll({
       category: filters.category || undefined,
       difficulty: filters.difficulty ? parseInt(filters.difficulty) : undefined,
+      pilot_experience: filters.pilot_experience || undefined,
       sort: filters.sort
     }),
     {
@@ -114,7 +116,25 @@ const MissionList: React.FC = () => {
           </Form.Group>
         </Col>
         
-        <Col lg={4} md={12} sm={12}>
+        <Col lg={4} md={6} sm={12}>
+          <Form.Group>
+            <Form.Label className="fw-semibold">
+              <i className="fas fa-user-graduate me-2 text-success"></i>Pilot Experience
+            </Form.Label>
+            <Form.Select 
+              value={filters.pilot_experience}
+              onChange={(e) => handleFilterChange('pilot_experience', e.target.value)}
+              size="lg"
+            >
+              <option value="">All Experience Levels</option>
+              <option value="Beginner (< 100 hours)">Beginner (&lt; 100 hours)</option>
+              <option value="Intermediate (100 - 1000 hours)">Intermediate (100 - 1000 hours)</option>
+              <option value="Advanced (1000+ hours)">Advanced (1000+ hours)</option>
+            </Form.Select>
+          </Form.Group>
+        </Col>
+        
+        <Col lg={4} md={6} sm={12}>
           <Form.Group>
             <Form.Label className="fw-semibold">
               <i className="fas fa-sort me-2 text-info"></i>Sort By
