@@ -87,7 +87,8 @@
   (try
     (let [mission-id (Integer/parseInt id)
           mission-data (:body request)
-          auth-header (get-in request [:headers "authorization"])
+          headers (:headers request)
+          auth-header (or (get headers "authorization") (get headers "Authorization"))
           token (when auth-header (str/replace auth-header #"Bearer " ""))
           is-admin (and token (db/validate-admin-session token))]
       (if (db/get-mission-by-id mission-id)
@@ -315,6 +316,23 @@
             (status 401))))
     (catch Exception e
       (-> (response {:error "Login failed" :details (.getMessage e)})
+          (status 500)))))
+
+(defn check-admin-status [request]
+  "Check if current user is admin"
+  (try
+    (let [headers (:headers request)
+          auth-header (or (get headers "authorization") (get headers "Authorization"))
+          token (when auth-header 
+                  (if (.startsWith auth-header "Bearer ")
+                    (subs auth-header 7)
+                    auth-header))
+          is-admin (and token (not (empty? token)) (db/validate-admin-session token))]
+      (if is-admin
+        (response {:is_admin true :admin_name (:admin_name is-admin)})
+        (response {:is_admin false})))
+    (catch Exception e
+      (-> (response {:error "Failed to check admin status" :details (.getMessage e)})
           (status 500)))))
 
 ;; Mission update approval handlers

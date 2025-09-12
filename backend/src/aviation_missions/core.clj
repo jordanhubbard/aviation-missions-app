@@ -52,6 +52,7 @@
   
   ;; Admin endpoints
   (POST "/admin/login" request (handlers/admin-login request))
+  (GET "/admin/status" request (handlers/check-admin-status request))
   
   ;; Health check
   (GET "/health" [] (response {:status "healthy"}))

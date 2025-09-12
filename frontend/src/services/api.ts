@@ -9,24 +9,52 @@ const api = axios.create({
 });
 
 // Admin token management
-let adminToken: string | null = localStorage.getItem('adminToken');
+let adminToken: string | null = null;
+
+// Initialize token from localStorage
+const initializeToken = () => {
+  try {
+    const storedToken = localStorage.getItem('adminToken');
+    if (storedToken) {
+      adminToken = storedToken;
+      api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      console.log('Admin token loaded from localStorage:', storedToken);
+    }
+  } catch (error) {
+    console.error('Failed to load admin token from localStorage:', error);
+  }
+};
+
+// Initialize on load
+initializeToken();
 
 export const setAdminToken = (token: string) => {
+  console.log('Setting admin token:', token);
   adminToken = token;
-  localStorage.setItem('adminToken', token);
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  try {
+    localStorage.setItem('adminToken', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    console.log('Admin token set successfully');
+  } catch (error) {
+    console.error('Failed to set admin token:', error);
+  }
 };
 
 export const clearAdminToken = () => {
+  console.log('Clearing admin token');
   adminToken = null;
-  localStorage.removeItem('adminToken');
-  delete api.defaults.headers.common['Authorization'];
+  try {
+    localStorage.removeItem('adminToken');
+    delete api.defaults.headers.common['Authorization'];
+    console.log('Admin token cleared successfully');
+  } catch (error) {
+    console.error('Failed to clear admin token:', error);
+  }
 };
 
-// Set token if exists
-if (adminToken) {
-  api.defaults.headers.common['Authorization'] = `Bearer ${adminToken}`;
-}
+export const getAdminToken = () => {
+  return adminToken;
+};
 
 // Mission API
 export const missionsApi = {
@@ -113,6 +141,9 @@ export const updatesApi = {
 export const adminApi = {
   login: (credentials: { admin_name: string; password: string }) => 
     api.post<AdminSession>('/admin/login', credentials),
+  
+  checkStatus: () => 
+    api.get<{ is_admin: boolean; admin_name?: string }>('/admin/status'),
 };
 
 // Import/Export API
