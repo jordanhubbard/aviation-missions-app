@@ -62,11 +62,16 @@ const EditMission: React.FC = () => {
   const updateMutation = useMutation(
     (updatedData: Partial<Mission>) => missionsApi.update(missionId, updatedData),
     {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        console.log('Mission updated successfully:', response.data);
         setShowSuccess(true);
         queryClient.invalidateQueries(['mission', missionId]);
         queryClient.invalidateQueries('missions');
         setTimeout(() => setShowSuccess(false), 5000);
+      },
+      onError: (error: any) => {
+        console.error('Failed to update mission:', error);
+        console.error('Error details:', error.response?.data);
       }
     }
   );
@@ -97,9 +102,20 @@ const EditMission: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
+    
     if (formData.title && formData.category && formData.objective && 
         formData.mission_description && formData.why_description) {
+      console.log('Validation passed, submitting update...');
       updateMutation.mutate(formData);
+    } else {
+      console.log('Validation failed:', {
+        title: !!formData.title,
+        category: !!formData.category,
+        objective: !!formData.objective,
+        mission_description: !!formData.mission_description,
+        why_description: !!formData.why_description
+      });
     }
   };
 
@@ -196,7 +212,17 @@ const EditMission: React.FC = () => {
               {(updateMutation.error as any) && (
                 <Alert variant="danger" className="mb-4">
                   <i className="fas fa-exclamation-triangle me-2"></i>
-                  There was an error updating the mission. Please try again.
+                  <strong>Error updating mission:</strong>
+                  <div className="mt-2">
+                    {(updateMutation.error as any)?.response?.data?.error || 
+                     (updateMutation.error as any)?.message || 
+                     'There was an error updating the mission. Please try again.'}
+                  </div>
+                  {(updateMutation.error as any)?.response?.data?.details && (
+                    <div className="mt-1 small">
+                      <strong>Details:</strong> {(updateMutation.error as any).response.data.details}
+                    </div>
+                  )}
                 </Alert>
               )}
 

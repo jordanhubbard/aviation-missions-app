@@ -1,0 +1,67 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Development files
+.env
+.env.local
+.env.example
+
+# Node.js
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+target/
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Development containers
+docker-compose.yml
+docker-compose.override.yml
+docker-compose.dev.yml
+
+# Deployment files (not needed in container)
+k8s-deployment.yaml
+ecs-task-definition.json
+railway.json
+heroku.yml
+deploy-cloud.sh

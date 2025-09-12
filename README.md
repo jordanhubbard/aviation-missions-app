@@ -180,18 +180,350 @@ make clean       # Clean up containers
 
 ## Deployment
 
-### Production Deployment
-1. Set environment variables in `.env`
-2. Run `make production`
-3. Configure reverse proxy (nginx/Apache) to point to container
-4. Set up SSL/TLS certificates
-5. Configure DNS to point to server
+### Quick Production Deployment
+```bash
+# Clone and build
+git clone <repository-url>
+cd scenario-generator
+make build
 
-### Port Configuration
-The application uses configurable ports:
-- Default web port: 8080
-- Default API port: 3000
-- Change via `WEB_PORT` and `API_PORT` environment variables
+# Start with custom ports
+WEB_PORT=80 API_PORT=3000 make start
+```
+
+### Automated Cloud Deployment
+Use the included deployment script for easy cloud deployment:
+
+```bash
+# Make the script executable
+chmod +x deploy-cloud.sh
+
+# Deploy to different providers
+./deploy-cloud.sh docker-hub
+./deploy-cloud.sh aws-ecs
+./deploy-cloud.sh google-run
+./deploy-cloud.sh azure-aci
+./deploy-cloud.sh kubernetes
+./deploy-cloud.sh railway
+./deploy-cloud.sh heroku
+
+# With custom options
+./deploy-cloud.sh google-run --image-name my-aviation-app --web-port 80
+```
+
+### Containerized Service Providers
+
+#### Docker Hub / Container Registry Deployment
+
+**Step 1: Build and Push to Registry**
+```bash
+# Build the image
+docker build -t your-registry/aviation-missions:latest .
+
+# Push to your registry (Docker Hub, AWS ECR, Google Container Registry, etc.)
+docker push your-registry/aviation-missions:latest
+```
+
+**Step 2: Deploy with Docker Compose**
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+services:
+  aviation-app:
+    image: your-registry/aviation-missions:latest
+    ports:
+      - "80:8080"    # Map host port 80 to container port 8080
+      - "3000:3000"  # API port (optional for direct access)
+    environment:
+      - WEB_PORT=8080
+      - API_PORT=3000
+      - DATABASE_URL=jdbc:h2:./data/aviation-missions
+    volumes:
+      - aviation_data:/app/data  # Persist database
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  aviation_data:
+```
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### AWS ECS (Elastic Container Service)
+
+**Task Definition JSON:**
+```json
+{
+  "family": "aviation-missions",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "aviation-app",
+      "image": "your-registry/aviation-missions:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "WEB_PORT", "value": "8080"},
+        {"name": "API_PORT", "value": "3000"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/aviation-missions",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3
+      }
+    }
+  ]
+}
+```
+
+**Deploy with AWS CLI:**
+```bash
+# Register task definition
+aws ecs register-task-definition --cli-input-json file://task-definition.json
+
+# Create or update service
+aws ecs create-service \
+  --cluster your-cluster \
+  --service-name aviation-missions \
+  --task-definition aviation-missions:1 \
+  --desired-count 1 \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-12345],securityGroups=[sg-12345],assignPublicIp=ENABLED}"
+```
+
+#### Google Cloud Run
+
+```bash
+# Build and push to Google Container Registry
+docker build -t gcr.io/YOUR-PROJECT-ID/aviation-missions:latest .
+docker push gcr.io/YOUR-PROJECT-ID/aviation-missions:latest
+
+# Deploy to Cloud Run
+gcloud run deploy aviation-missions \
+  --image gcr.io/YOUR-PROJECT-ID/aviation-missions:latest \
+  --platform managed \
+  --region us-central1 \
+  --port 8080 \
+  --set-env-vars WEB_PORT=8080,API_PORT=3000 \
+  --memory 1Gi \
+  --cpu 1 \
+  --max-instances 10 \
+  --allow-unauthenticated
+```
+
+#### Azure Container Instances
+
+```bash
+# Create resource group
+az group create --name aviation-rg --location eastus
+
+# Deploy container
+az container create \
+  --resource-group aviation-rg \
+  --name aviation-missions \
+  --image your-registry/aviation-missions:latest \
+  --ports 8080 \
+  --environment-variables WEB_PORT=8080 API_PORT=3000 \
+  --cpu 1 \
+  --memory 1 \
+  --restart-policy Always
+```
+
+#### Kubernetes Deployment
+
+**deployment.yaml:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aviation-missions
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aviation-missions
+  template:
+    metadata:
+      labels:
+        app: aviation-missions
+    spec:
+      containers:
+      - name: aviation-app
+        image: your-registry/aviation-missions:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: WEB_PORT
+          value: "8080"
+        - name: API_PORT
+          value: "3000"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aviation-missions-service
+spec:
+  selector:
+    app: aviation-missions
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
+```
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+#### Railway
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login and initialize
+railway login
+railway init
+
+# Deploy
+railway up
+```
+
+**railway.json:**
+```json
+{
+  "build": {
+    "builder": "DOCKER"
+  },
+  "deploy": {
+    "startCommand": "/start.sh",
+    "healthcheckPath": "/health"
+  }
+}
+```
+
+#### Heroku (Container Registry)
+
+```bash
+# Login to Heroku Container Registry
+heroku container:login
+
+# Create Heroku app
+heroku create your-aviation-app
+
+# Build and push
+heroku container:push web --app your-aviation-app
+heroku container:release web --app your-aviation-app
+
+# Set environment variables
+heroku config:set WEB_PORT=8080 --app your-aviation-app
+heroku config:set API_PORT=3000 --app your-aviation-app
+```
+
+**heroku.yml:**
+```yaml
+build:
+  docker:
+    web: Dockerfile
+run:
+  web: /start.sh
+```
+
+### Environment Variables
+
+**Required:**
+- `WEB_PORT` - Port for web interface (default: 8080)
+- `API_PORT` - Port for API server (default: 3000)
+
+**Optional:**
+- `DATABASE_URL` - Database connection string (default: `jdbc:h2:./data/aviation-missions`)
+
+### Data Persistence
+
+**Important:** The application uses an H2 database that stores data in `/app/data/`. For production deployments:
+
+1. **Docker Volumes:** Mount a volume to `/app/data/`
+2. **Cloud Storage:** Use persistent volumes or managed databases
+3. **Backup Strategy:** Regularly backup the `aviation-missions.mv.db` file
+
+### SSL/TLS and Domain Setup
+
+Most container services provide automatic HTTPS. For custom domains:
+
+1. **Cloud Providers:** Use their load balancer/ingress with SSL certificates
+2. **Reverse Proxy:** Place nginx/Traefik in front with Let's Encrypt
+3. **CDN:** Use CloudFlare or similar for SSL termination
+
+### Monitoring and Logs
+
+The application provides:
+- **Health Check Endpoint:** `GET /health`
+- **API Documentation:** `/docs/`
+- **Structured Logging:** Container logs via stdout/stderr
+
+### Scaling Considerations
+
+- **Stateless Design:** Application can run multiple instances
+- **Database:** Currently uses H2 (single file). For high availability, consider:
+  - PostgreSQL with connection pooling
+  - MySQL with read replicas
+  - Cloud database services (RDS, Cloud SQL, etc.)
+
+### Security Recommendations
+
+1. **Admin Authentication:** Change default admin password
+2. **Network Security:** Use private networks where possible
+3. **Container Security:** Regularly update base images
+4. **Secrets Management:** Use container orchestration secrets for sensitive data
+
+### Cost Optimization
+
+- **Resource Limits:** Set appropriate CPU/memory limits
+- **Auto-scaling:** Configure based on traffic patterns
+- **Sleep/Wake:** Use services that can scale to zero during low usage
 
 ## Contributing
 
