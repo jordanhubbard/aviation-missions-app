@@ -10,7 +10,6 @@ export interface Mission {
   route?: string;
   suggested_route?: string;
   pilot_experience: string;
-  recommended_aircraft: string;
   comment_count: number;
   completion_count: number;
   thumbs_up: number;
@@ -51,7 +50,6 @@ export interface Submission {
   notes?: string;
   route?: string;
   pilot_experience: string;
-  recommended_aircraft: string;
   submitter_name: string;
   submitter_email?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -72,7 +70,6 @@ export interface MissionUpdate {
   notes?: string;
   route?: string;
   pilot_experience: string;
-  recommended_aircraft: string;
   submitter_name: string;
   submitter_email?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -97,7 +94,6 @@ export interface NewMissionSubmission {
   notes?: string;
   route?: string;
   pilot_experience: string;
-  recommended_aircraft: string;
   submitter_name: string;
   submitter_email?: string;
 }

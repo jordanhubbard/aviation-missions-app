@@ -478,7 +478,6 @@ const AdminPanel: React.FC = () => {
       "mission_description": "Description",
       "why_description": "Why description",
       "pilot_experience": "Beginner (< 100 hours)",
-      "recommended_aircraft": "Cessna 172",
       "notes": "Optional notes",
       "route": "Optional route"
     }

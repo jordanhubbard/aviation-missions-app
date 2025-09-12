@@ -15,7 +15,6 @@ const SubmitMission: React.FC = () => {
     notes: '',
     route: '',
     pilot_experience: 'Beginner (< 100 hours)',
-    recommended_aircraft: 'N/A',
     submitter_name: '',
     submitter_email: ''
   });
@@ -37,7 +36,6 @@ const SubmitMission: React.FC = () => {
           notes: '',
           route: '',
           pilot_experience: 'Beginner (< 100 hours)',
-          recommended_aircraft: 'N/A',
           submitter_name: '',
           submitter_email: ''
         });
@@ -222,20 +220,6 @@ const SubmitMission: React.FC = () => {
                       </Form.Select>
                       <Form.Text className="text-muted">
                         Recommended minimum pilot experience level
-                      </Form.Text>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Recommended Aircraft</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={formData.recommended_aircraft}
-                        onChange={(e) => handleInputChange('recommended_aircraft', e.target.value)}
-                        placeholder="e.g., Cessna 172, Piper Cherokee, N/A"
-                      />
-                      <Form.Text className="text-muted">
-                        Specific aircraft recommendation or "N/A" for no preference
                       </Form.Text>
                     </Form.Group>
                   </Col>

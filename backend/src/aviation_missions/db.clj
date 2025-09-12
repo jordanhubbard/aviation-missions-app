@@ -25,7 +25,7 @@
         route VARCHAR(500),
         suggested_route VARCHAR(500),
         pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
-        recommended_aircraft VARCHAR(255) DEFAULT 'N/A',
+        special_challenges TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )"])
@@ -38,9 +38,17 @@
       ;; Column already exists, ignore
       ))
   
+  ;; Remove recommended_aircraft column if it exists (cleanup from previous versions)
   (try
     (jdbc/execute! db-spec
-      ["ALTER TABLE missions ADD COLUMN recommended_aircraft VARCHAR(255) DEFAULT 'N/A'"])
+      ["ALTER TABLE missions DROP COLUMN recommended_aircraft"])
+    (catch Exception e
+      ;; Column doesn't exist or already dropped, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE missions ADD COLUMN special_challenges TEXT DEFAULT ''"])
     (catch Exception e
       ;; Column already exists, ignore
       ))
@@ -100,7 +108,6 @@
         notes TEXT,
         route VARCHAR(500),
         pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
-        recommended_aircraft VARCHAR(255) DEFAULT 'N/A',
         submitter_name VARCHAR(100) NOT NULL,
         submitter_email VARCHAR(255),
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -117,11 +124,12 @@
       ;; Column already exists, ignore
       ))
   
+  ;; Remove recommended_aircraft column from submissions if it exists
   (try
     (jdbc/execute! db-spec
-      ["ALTER TABLE submissions ADD COLUMN recommended_aircraft VARCHAR(255) DEFAULT 'N/A'"])
+      ["ALTER TABLE submissions DROP COLUMN recommended_aircraft"])
     (catch Exception e
-      ;; Column already exists, ignore
+      ;; Column doesn't exist or already dropped, ignore
       ))
   
   (jdbc/execute! db-spec
@@ -137,7 +145,6 @@
         notes TEXT,
         route VARCHAR(500),
         pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
-        recommended_aircraft VARCHAR(255) DEFAULT 'N/A',
         submitter_name VARCHAR(100) NOT NULL,
         submitter_email VARCHAR(255),
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -155,11 +162,12 @@
       ;; Column already exists, ignore
       ))
   
+  ;; Remove recommended_aircraft column from mission_updates if it exists
   (try
     (jdbc/execute! db-spec
-      ["ALTER TABLE mission_updates ADD COLUMN recommended_aircraft VARCHAR(255) DEFAULT 'N/A'"])
+      ["ALTER TABLE mission_updates DROP COLUMN recommended_aircraft"])
     (catch Exception e
-      ;; Column already exists, ignore
+      ;; Column doesn't exist or already dropped, ignore
       ))
   
   (jdbc/execute! db-spec
@@ -284,7 +292,7 @@
       ;; Create mission from submission
       (create-mission! (select-keys submission [:title :category :difficulty :objective 
                                                 :mission_description :why_description :notes :route
-                                                :pilot_experience :recommended_aircraft]))
+                                                :pilot_experience]))
       ;; Update submission status
       (jdbc/update! db-spec :submissions 
         {:status "approved" :reviewed_at (coerce/to-timestamp (time/now))}
@@ -353,7 +361,7 @@
   (jdbc/query db-spec
     ["SELECT id, title, category, difficulty, objective, mission_description, 
              why_description, notes, route, suggested_route, pilot_experience, 
-             recommended_aircraft, created_at, updated_at 
+             created_at, updated_at 
       FROM missions ORDER BY id"]))
 
 (defn import-missions! [missions-data]
@@ -371,8 +379,7 @@
            :notes (:notes mission)
            :route (:route mission)
            :suggested_route (:suggested_route mission)
-           :pilot_experience (or (:pilot_experience mission) "Beginner (< 100 hours)")
-           :recommended_aircraft (or (:recommended_aircraft mission) "N/A")})
+           :pilot_experience (or (:pilot_experience mission) "Beginner (< 100 hours)")})
         (swap! imported-count inc)
         (catch Exception e
           (println "Failed to import mission:" (:title mission) "Error:" (.getMessage e)))))

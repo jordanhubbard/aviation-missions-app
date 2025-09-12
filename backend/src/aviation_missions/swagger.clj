@@ -185,7 +185,6 @@
                    :route {:type "string"}
                    :suggested_route {:type "string"}
                    :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
-                   :recommended_aircraft {:type "string"}
                    :comment_count {:type "integer"}
                    :completion_count {:type "integer"}
                    :thumbs_up {:type "integer"}
@@ -205,7 +204,7 @@
                    :notes {:type "string"}
                    :route {:type "string"}
                    :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
-                   :recommended_aircraft {:type "string" :default "N/A"}}}
+}}
       
       :Comment
       {:type "object"
@@ -251,7 +250,6 @@
                    :notes {:type "string"}
                    :route {:type "string"}
                    :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
-                   :recommended_aircraft {:type "string"}
                    :submitter_name {:type "string"}
                    :submitter_email {:type "string"}
                    :status {:type "string" :enum ["pending" "approved" "rejected"]}
@@ -271,7 +269,6 @@
                    :notes {:type "string"}
                    :route {:type "string"}
                    :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"]}
-                   :recommended_aircraft {:type "string" :default "N/A"}
                    :submitter_name {:type "string"}
                    :submitter_email {:type "string"}}}
       
@@ -288,7 +285,7 @@
                    :route {:type "string"}
                    :suggested_route {:type "string"}
                    :pilot_experience {:type "string" :enum ["Beginner (< 100 hours)" "Intermediate (100 - 1000 hours)" "Advanced (1000+ hours)"] :default "Beginner (< 100 hours)"}
-                   :recommended_aircraft {:type "string" :default "N/A"}}}}
+}}}
      
      :securityDefinitions
      {:BearerAuth

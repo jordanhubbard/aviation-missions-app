@@ -103,14 +103,6 @@ const MissionCard: React.FC<MissionCardProps> = ({ mission }) => {
               </Badge>
             </div>
           </div>
-          
-          {mission.recommended_aircraft && mission.recommended_aircraft !== 'N/A' && (
-            <div className="d-flex align-items-center small text-muted mb-0">
-              <i className="fas fa-plane me-1"></i>
-              <span className="fw-bold me-1">Aircraft:</span>
-              <span>{mission.recommended_aircraft}</span>
-            </div>
-          )}
         </div>
         
         <div className="mt-auto pt-2 border-top flex-shrink-0">
