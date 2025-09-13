@@ -4,16 +4,6 @@
   },
   "deploy": {
     "startCommand": "/start.sh",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 300
-  },
-  "environments": {
-    "production": {
-      "variables": {
-        "WEB_PORT": "8080",
-        "API_PORT": "3000",
-        "DATABASE_URL": "jdbc:h2:./data/aviation-missions"
-      }
-    }
+    "healthcheckPath": "/health"
   }
 }
