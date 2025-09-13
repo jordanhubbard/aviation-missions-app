@@ -40,7 +40,7 @@ const Navigation: React.FC = () => {
           <LinkContainer to="/">
             <Navbar.Brand>
               <i className="fas fa-plane me-2"></i>
-              Aviation Mission Manager
+              Aviation Mission Manager v2.1
             </Navbar.Brand>
           </LinkContainer>
           
@@ -52,6 +52,9 @@ const Navigation: React.FC = () => {
               </LinkContainer>
               <LinkContainer to="/submit">
                 <Nav.Link>Submit Mission</Nav.Link>
+              </LinkContainer>
+              <LinkContainer to="/challenges">
+                <Nav.Link>Challenges</Nav.Link>
               </LinkContainer>
               {adminLoggedIn && (
                 <LinkContainer to="/admin">

@@ -8,6 +8,7 @@ import MissionDetail from './pages/MissionDetail'
 import SubmitMission from './pages/SubmitMission'
 import AdminPanel from './pages/AdminPanel'
 import EditMission from './pages/EditMission'
+import Challenges from './pages/Challenges'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/missions/:id/edit" element={<EditMission />} />
           <Route path="/submit" element={<SubmitMission />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/challenges" element={<Challenges />} />
         </Routes>
       </Container>
     </div>
