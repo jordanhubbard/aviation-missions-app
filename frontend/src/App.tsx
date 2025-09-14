@@ -1,30 +1,32 @@
-// import React from 'react' // Not needed in React 18 with new JSX transform
+import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { Container } from 'react-bootstrap'
-import './styles/print.css'
+import { Container, AppBar, Toolbar, Typography, Box } from '@mui/material'
+import MissionsPage from './pages/MissionsPage'
+import MissionDetailsPage from './pages/MissionDetailsPage'
+import SubmissionsPage from './pages/SubmissionsPage'
 import Navigation from './components/Navigation'
-import MissionList from './pages/MissionList'
-import MissionDetail from './pages/MissionDetail'
-import SubmitMission from './pages/SubmitMission'
-import AdminPanel from './pages/AdminPanel'
-import EditMission from './pages/EditMission'
-import Challenges from './pages/Challenges'
 
 function App() {
   return (
-    <div className="App">
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            ✈️ Aviation Mission Management
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      
       <Navigation />
-      <Container fluid className="mt-4">
+      
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Routes>
-          <Route path="/" element={<MissionList />} />
-          <Route path="/missions/:id" element={<MissionDetail />} />
-          <Route path="/missions/:id/edit" element={<EditMission />} />
-          <Route path="/submit" element={<SubmitMission />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/challenges" element={<Challenges />} />
+          <Route path="/" element={<MissionsPage />} />
+          <Route path="/missions/:id" element={<MissionDetailsPage />} />
+          <Route path="/submissions" element={<SubmissionsPage />} />
         </Routes>
       </Container>
-    </div>
+    </Box>
   )
 }
 
