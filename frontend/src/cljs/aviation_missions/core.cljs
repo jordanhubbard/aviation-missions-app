@@ -23,13 +23,19 @@
 
 ;; API functions
 (defn fetch-missions []
+  (js/console.log "Fetching missions from API...")
   (swap! app-state assoc :loading true)
   (go
-    (let [response (<! (http/get "/missions"))]
+    (let [url (str config/api-base-url "/missions")
+          _ (js/console.log "Making request to:" url)
+          response (<! (http/get url))]
+      (js/console.log "Response received:" response)
       (if (= 200 (:status response))
-        (swap! app-state assoc :missions (:missions (:body response)) :loading false)
         (do
-          (js/console.error "Failed to fetch missions:" (:body response))
+          (js/console.log "Missions data:" (:missions (:body response)))
+          (swap! app-state assoc :missions (:missions (:body response)) :loading false))
+        (do
+          (js/console.error "Failed to fetch missions. Status:" (:status response) "Body:" (:body response))
           (swap! app-state assoc :loading false))))))
 
 (defn create-mission [mission]
@@ -239,6 +245,10 @@
     (rdom/render [app] root-el)))
 
 (defn init! []
+  (js/console.log "Aviation Missions app initializing...")
+  (js/console.log "Debug mode:" config/debug?)
+  (js/console.log "API base URL:" config/api-base-url)
   (dev-setup)
   (mount-root)
+  (js/console.log "App mounted, fetching missions...")
   (fetch-missions))

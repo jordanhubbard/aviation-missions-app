@@ -29,6 +29,8 @@ FROM base AS backend-build
 COPY backend/ ./backend/
 # Copy frontend static files into backend resources before building
 COPY --from=frontend-build /app/frontend/resources/public ./backend/resources/public/
+# Copy missions data file for database seeding
+COPY missions.txt /app/missions.txt
 WORKDIR /app/backend
 RUN lein uberjar
 
@@ -42,6 +44,9 @@ WORKDIR /app
 
 # Copy built backend jar (which now includes frontend static files)
 COPY --from=backend-build /app/backend/target/uberjar/aviation-missions-*-standalone.jar /app/aviation-missions.jar
+
+# Copy missions data file to production stage
+COPY --from=backend-build /app/missions.txt /app/missions.txt
 
 # Create data directory
 RUN mkdir -p /app/data
