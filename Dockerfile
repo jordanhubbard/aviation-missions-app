@@ -19,10 +19,9 @@ WORKDIR /app
 
 # Frontend build stage  
 FROM base AS frontend-build
-COPY frontend/package.json frontend/package-lock.json ./frontend/
+COPY frontend/ ./frontend/
 WORKDIR /app/frontend
-RUN npm ci
-COPY frontend/ ./
+RUN npm install
 RUN npm run build
 
 # Backend build stage (after frontend to include static files)
