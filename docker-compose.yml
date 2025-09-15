@@ -1,36 +1,21 @@
 services:
   aviation-missions:
-    image: aviation-missions:dev
+    image: aviation-missions:latest
     build:
       context: .
-      dockerfile: ${DOCKERFILE:-Dockerfile.local}
-      target: development
-      args:
-        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
-        BUILDKIT_INLINE_CACHE: 1
-      # BuildKit optimizations for faster builds
-      cache_from:
-        - aviation-missions:dev
+      dockerfile: Dockerfile
+      target: production
     ports:
-      - "${PORT:-8080}:8080"
+      - "${PORT:-8080}:3000"
     volumes:
-      - ./src:/app/src  # Mount source code for hot reloading
-      - ./frontend:/app/frontend  # Mount frontend for hot reloading
       - ./data:/app/data
-      - ./tests:/app/tests  # Mount tests directory
     restart: unless-stopped
     environment:
-      - PYTHONPATH=/app
-      - ENVIRONMENT=development
-      - PORT=${PORT:-8080}
-      - BUILDKIT_PROGRESS=plain
-      - DOCKER_BUILDKIT=1
-    # Use tty and stdin_open for interactive debugging if needed
-    tty: true
-    stdin_open: true
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - API_PORT=3000
     # Set healthcheck to ensure container is running properly
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
