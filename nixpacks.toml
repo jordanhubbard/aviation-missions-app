@@ -1,0 +1,11 @@
+# Nixpacks configuration for Railway
+# Force Docker-only build, disable auto-detection
+
+[phases.build]
+cmds = ["echo 'Using Dockerfile only - no additional build steps'"]
+
+[phases.install]
+cmds = ["echo 'Skipping install phase - using Dockerfile'"]
+
+[start]
+cmd = "java -jar /app/aviation-missions.jar"
