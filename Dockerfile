@@ -1,90 +1,60 @@
-# syntax=docker/dockerfile:1.4
+# Multi-stage build for Clojure backend + ClojureScript frontend
+FROM alpine:3.18 AS base
 
-# Build arguments
-ARG PYTHON_VERSION=3.11
-ARG BUILDKIT_INLINE_CACHE=1
+# Install system dependencies
+RUN apk add --no-cache \
+    openjdk17-jre \
+    nodejs \
+    npm \
+    curl \
+    bash \
+    ca-certificates
 
-# Base stage with common dependencies
-FROM python:${PYTHON_VERSION}-slim AS base
+# Install Leiningen for Clojure builds
+RUN curl -L -o /usr/local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein \
+    && chmod +x /usr/local/bin/lein \
+    && LEIN_ROOT=1 lein version
+
 WORKDIR /app
 
-# Install system dependencies including Node.js
-RUN apt-get update && apt-get install -y \
-    gcc \
-    curl \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+# Frontend build stage  
+FROM base AS frontend-build
+COPY frontend/ ./frontend/
+WORKDIR /app/frontend
+RUN npm install && npm run build
 
-# Set environment variables
-ENV PYTHONPATH=/app \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+# Backend build stage (after frontend to include static files)
+FROM base AS backend-build
+COPY backend/ ./backend/
+# Copy frontend static files into backend resources before building
+COPY --from=frontend-build /app/frontend/resources/public ./backend/resources/public/
+WORKDIR /app/backend
+RUN lein uberjar
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-# Create necessary directories
-RUN mkdir -p data logs
-
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Development stage with testing tools
-FROM base AS development
-
-# Install development and testing dependencies
-RUN pip install pytest pytest-cov flake8 black isort
-
-# Install application dependencies
-RUN pip install -r requirements.txt
-
-# Copy the application code
-COPY . .
-
-# Build frontend (skip if build fails during testing)
-RUN cd frontend && npm install && (npm run build || echo "Frontend build failed, continuing...")
-
-# Set default port environment variables (can be overridden at runtime)
-ENV PORT=8080
-
-# Expose port
-EXPOSE $PORT
-
-# Use the entrypoint script
-ENTRYPOINT ["/docker-entrypoint.sh"]
-
-# Testing stage for running tests
-FROM development AS testing
-
-# Set testing environment variables
-ENV ENVIRONMENT=testing
-
-# Default command for testing
-CMD ["pytest", "tests/", "-v"]
-
-# Production stage - optimized for smaller size and security
+# Production stage
 FROM base AS production
 
-# Install only production dependencies
-RUN pip install -r requirements.txt
+# Remove build tools to reduce image size
+RUN apk del npm
 
-# Copy only necessary files for production
-COPY src/ /app/src/
-COPY frontend/ /app/frontend/
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+WORKDIR /app
 
-# Build frontend for production (install all deps including devDeps for build)
-RUN cd frontend && npm install && npm run build && npm prune --production
+# Copy built backend jar (which now includes frontend static files)
+COPY --from=backend-build /app/backend/target/uberjar/aviation-missions-*-standalone.jar /app/aviation-missions.jar
 
-# Set default port environment variables (can be overridden at runtime)
-ENV PORT=8080
+# Create data directory
+RUN mkdir -p /app/data
 
-# Expose port
-EXPOSE $PORT
+# Expose port (Railway will override this with PORT env var)
+EXPOSE 3000
 
-# Use the entrypoint script
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
+
+# Set environment variables for Railway compatibility
+ENV PORT=3000
+ENV API_PORT=3000
+
+# Start the application
+CMD ["java", "-jar", "/app/aviation-missions.jar"]

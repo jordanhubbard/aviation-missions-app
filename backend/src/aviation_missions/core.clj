@@ -4,10 +4,13 @@
             [compojure.route :as route]
             [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
+            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-            [ring.util.response :refer [response status]]
+            [ring.middleware.resource :refer [wrap-resource]]
+            [ring.middleware.content-type :refer [wrap-content-type]]
+            [ring.middleware.not-modified :refer [wrap-not-modified]]
+            [ring.util.response :refer [response status resource-response]]
             [aviation-missions.db :as db]
             [aviation-missions.handlers :as handlers]
             [aviation-missions.swagger :as swagger])
@@ -57,6 +60,10 @@
   ;; Health check
   (GET "/health" [] (response {:status "healthy"}))
   
+  ;; Serve frontend static files
+  (GET "/" [] (resource-response "public/index.html"))
+  (GET "/*" [] (resource-response "public/index.html"))
+  
   (route/not-found {:status 404 :body {:error "Not found"}}))
 
 (def app
@@ -68,7 +75,10 @@
                  :access-control-allow-headers ["Content-Type" "Authorization"])
       (wrap-json-body {:keywords? true})
       wrap-json-response
-      (wrap-defaults api-defaults)))
+      (wrap-resource "public")
+      wrap-content-type
+      wrap-not-modified
+      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] false))))
 
 (defn -main
   "Start the server"
@@ -84,6 +94,6 @@
       (catch Exception e
         (println "Could not seed database with missions:" (.getMessage e)))))
   
-  (let [port (Integer/parseInt (or (System/getenv "API_PORT") "3000"))]
+  (let [port (Integer/parseInt (or (System/getenv "PORT") (System/getenv "API_PORT") "3000"))]
     (println (str "Starting server on port " port))
     (jetty/run-jetty app {:port port :join? true})))
