@@ -1,69 +1,101 @@
 # Aviation Mission Management Makefile
-# Standardized Docker-based workflow
+# Clojure Backend + ClojureScript/Reagent Frontend
 
 # Port Configuration (can be overridden by environment variables)
 PORT ?= 8080
+API_PORT ?= 3000
 
 # Export ports for use in docker-compose and other tools
 export PORT
+export API_PORT
 
 # Variables
 IMAGE_NAME=aviation-missions
 CONTAINER_NAME=aviation-missions-container
 COMPOSE_FILE=docker-compose.yml
+DEV_COMPOSE_FILE=docker-compose.dev.yml
 
-# Docker BuildKit optimization settings for local development
+# Docker BuildKit optimization settings
 export DOCKER_BUILDKIT=1
 export BUILDKIT_PROGRESS=plain
-export BUILDKIT_INLINE_CACHE=1
-export DOCKERFILE=Dockerfile.local
-
-# Docker Compose build optimizations
-COMPOSE_BUILD_OPTS=--parallel --pull
 
 # Default target
-.PHONY: help test
+.PHONY: help
 help:
 	@echo "Aviation Mission Management - Available Commands:"
 	@echo ""
-	@echo "  start        - Build and start the complete application"
+	@echo "  start        - Build and start the complete application (production)"
+	@echo "  dev          - Build and start in development mode"
 	@echo "  stop         - Stop the running application"
 	@echo "  logs         - View application logs (blocking)"
 	@echo "  clean        - Complete cleanup: stop, remove containers, images, and files"
-	@echo "  test         - Run comprehensive test suite"
+	@echo "  build        - Build the Docker image"
+	@echo "  test-local   - Test the application locally"
+	@echo ""
+	@echo "  Backend Development:"
+	@echo "  dev-backend  - Start only the Clojure backend for development"
+	@echo "  dev-frontend - Start only the ClojureScript frontend for development"
 	@echo ""
 	@echo "Port Configuration:"
-	@echo "  PORT = $(PORT) (FastAPI application)"
+	@echo "  PORT = $(PORT) (Main application port)"
+	@echo "  API_PORT = $(API_PORT) (Backend API port)"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make start                    # Use default port"
+	@echo "  make start                    # Production mode"
+	@echo "  make dev                      # Development mode"
 	@echo "  PORT=9000 make start          # Use custom port"
-	@echo "  make stop                     # Stop the application"
-	@echo "  make logs                     # View application logs"
-	@echo "  make clean                    # Complete cleanup (removes all data!)"
-	@echo "  make test                     # Run tests with coverage"
 
-# Start the application - builds everything and runs the container
+# Build the Docker image
+.PHONY: build
+build:
+	@echo "🔨 Building Aviation Mission Management Docker image..."
+	docker build -t $(IMAGE_NAME):latest .
+	@echo "✅ Build completed successfully!"
+
+# Start the application in production mode
 .PHONY: start
-start:
-	@echo "🚀 Starting Aviation Mission Management..."
-	@echo "Building and starting services with optimized BuildKit..."
-	docker-compose -f $(COMPOSE_FILE) build $(COMPOSE_BUILD_OPTS)
+start: build
+	@echo "🚀 Starting Aviation Mission Management (Production)..."
 	docker-compose -f $(COMPOSE_FILE) up -d
-	@echo "✅ FastAPI Application started successfully!"
+	@echo "✅ Application started successfully!"
 	@echo ""
 	@echo "🌐 Main Application: http://localhost:$(PORT)"
-	@echo "📚 API Documentation: http://localhost:$(PORT)/api/docs"
-	@echo "📖 ReDoc Documentation: http://localhost:$(PORT)/api/redoc"
+	@echo "📚 API Documentation: http://localhost:$(PORT)/api/swagger.json"
 	@echo ""
 	@echo "To view logs: make logs"
 	@echo "To stop: make stop"
+
+# Start the application in development mode
+.PHONY: dev
+dev: build
+	@echo "🚀 Starting Aviation Mission Management (Development)..."
+	docker-compose -f $(DEV_COMPOSE_FILE) up -d
+	@echo "✅ Development environment started successfully!"
+	@echo ""
+	@echo "🌐 Main Application: http://localhost:$(PORT)"
+	@echo "📚 API Documentation: http://localhost:$(PORT)/api/swagger.json"
+	@echo ""
+	@echo "To view logs: make logs"
+	@echo "To stop: make stop"
+
+# Start only the backend for development
+.PHONY: dev-backend
+dev-backend:
+	@echo "☕ Starting Clojure backend for development..."
+	cd backend && lein run
+
+# Start only the frontend for development
+.PHONY: dev-frontend
+dev-frontend:
+	@echo "⚛️ Starting ClojureScript frontend for development..."
+	cd frontend && npm install && npm run dev
 
 # Stop the running application
 .PHONY: stop
 stop:
 	@echo "🛑 Stopping Aviation Mission Management..."
 	-docker-compose -f $(COMPOSE_FILE) down 2>/dev/null || true
+	-docker-compose -f $(DEV_COMPOSE_FILE) down 2>/dev/null || true
 	@echo "✅ Application stopped successfully!"
 
 # View application logs (blocking)
@@ -71,43 +103,29 @@ stop:
 logs:
 	@echo "📋 Viewing Aviation Mission Management logs..."
 	@echo "Press Ctrl+C to stop viewing logs"
-	docker-compose -f $(COMPOSE_FILE) logs -f
+	docker-compose -f $(COMPOSE_FILE) logs -f 2>/dev/null || docker-compose -f $(DEV_COMPOSE_FILE) logs -f
 
-# Clean up everything - stop, remove container, clean images, and reset data
+# Clean up everything
 .PHONY: clean
 clean: stop
 	@echo "🧹 Cleaning up Docker resources..."
 	-docker-compose -f $(COMPOSE_FILE) down -v --rmi all --remove-orphans 2>/dev/null || true
+	-docker-compose -f $(DEV_COMPOSE_FILE) down -v --rmi all --remove-orphans 2>/dev/null || true
 	-docker rmi $(IMAGE_NAME):latest 2>/dev/null || true
 	-docker rmi $(IMAGE_NAME):dev 2>/dev/null || true
-	-docker rmi $(IMAGE_NAME):prod 2>/dev/null || true
-	-docker rmi $(IMAGE_NAME):test 2>/dev/null || true
 	@echo "🗑️  Cleaning up application data..."
 	-rm -rf data/* 2>/dev/null || true
-	-find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	-find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	-find . -type f -name ".coverage" -delete 2>/dev/null || true
-	-rm -rf htmlcov/ 2>/dev/null || true
-	-rm -rf .pytest_cache/ 2>/dev/null || true
+	-rm -rf backend/target/ 2>/dev/null || true
+	-rm -rf frontend/dist/ 2>/dev/null || true
 	-rm -rf frontend/node_modules/.cache/ 2>/dev/null || true
 	@echo "✅ Complete cleanup finished!"
-	@echo ""
-	@echo "🔄 All data, logs, and caches removed"
-	@echo ""
-	@echo "To start fresh: make start"
 
-# Run all tests with coverage reporting - CONTAINER ONLY
-.PHONY: test
-test:
-	@echo "🧪 Running comprehensive test suite..."
-	@echo "📦 Building test containers with optimized BuildKit..."
-	docker-compose -f $(COMPOSE_FILE) build $(COMPOSE_BUILD_OPTS)
-	@echo ""
-	@echo "🐍 Running Python/FastAPI tests..."
-	docker-compose -f $(COMPOSE_FILE) run --rm aviation-missions pytest tests/ -v --cov=src --cov-report=html --cov-report=term --cov-report=xml || true
-	@echo ""
-	@echo "✅ All tests completed!"
-	@echo "📊 Coverage report: htmlcov/index.html"
-	@echo "🔍 XML coverage: coverage.xml"
-	@echo ""
-	@echo "🐳 All tests run inside containers - no host dependencies!"
+# Test the application locally
+.PHONY: test-local
+test-local:
+	@echo "🧪 Testing application locally..."
+	@echo "Testing backend build..."
+	cd backend && lein test
+	@echo "Testing frontend build..."
+	cd frontend && npm install && npm run build
+	@echo "✅ Local tests completed!"
