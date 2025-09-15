@@ -20,7 +20,9 @@
                  [metosin/compojure-api "2.0.0-alpha31"]]
   :main ^:skip-aot aviation-missions.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all
+  :profiles {:dev {:dependencies [[ring/ring-mock "0.4.0"]]}
+             :test {:dependencies [[ring/ring-mock "0.4.0"]]}
+             :uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}
   :ring {:handler aviation-missions.core/app
          :port 3000})

@@ -213,7 +213,7 @@
 (defn create-mission! [mission-data]
   (let [result (jdbc/insert! db-spec :missions 
                  (assoc mission-data :created_at (coerce/to-timestamp (time/now))))
-        new-id (-> result first :generated_key)]
+        new-id (-> result first vals first)] ; H2 returns {:generated_key id} or similar
     (get-mission-by-id new-id)))
 
 (defn update-mission! [id mission-data]
@@ -283,8 +283,9 @@
     ["SELECT * FROM submissions ORDER BY created_at DESC"]))
 
 (defn create-submission! [submission-data]
-  (jdbc/insert! db-spec :submissions
-    (assoc submission-data :created_at (coerce/to-timestamp (time/now)))))
+  (let [result (jdbc/insert! db-spec :submissions
+                 (assoc submission-data :created_at (coerce/to-timestamp (time/now))))]
+    (-> result first vals first)))
 
 (defn approve-submission! [id]
   (let [submission (first (jdbc/query db-spec ["SELECT * FROM submissions WHERE id = ?" id]))]
