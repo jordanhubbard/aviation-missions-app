@@ -61,8 +61,10 @@
   (GET "/health" [] (response {:status "healthy"}))
   
   ;; Serve frontend static files
-  (GET "/" [] (resource-response "public/index.html"))
-  (GET "/*" [] (resource-response "public/index.html"))
+  (GET "/" [] (-> (resource-response "public/index.html")
+                  (assoc-in [:headers "Content-Type"] "text/html; charset=utf-8")))
+  (GET "/*" [] (-> (resource-response "public/index.html")
+                   (assoc-in [:headers "Content-Type"] "text/html; charset=utf-8")))
   
   (route/not-found {:status 404 :body {:error "Not found"}}))
 

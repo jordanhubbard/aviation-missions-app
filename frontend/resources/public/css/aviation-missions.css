@@ -83,7 +83,7 @@ body {
 
 /* Main content */
 .main-content {
-  padding: 2rem 0;
+  padding: 1rem 0;
   min-height: calc(100vh - 200px);
 }
 
@@ -92,8 +92,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
   border-bottom: 2px solid #e0e0e0;
 }
 
@@ -150,8 +150,8 @@ body {
 .filters {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -178,8 +178,8 @@ body {
 /* Mission cards */
 .missions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1rem;
 }
 
 .mission-card {
@@ -197,15 +197,16 @@ body {
 }
 
 .mission-header {
-  padding: 1rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #e0e0e0;
 }
 
 .mission-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #1976d2;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
 }
 
 .mission-meta {
@@ -215,9 +216,9 @@ body {
 }
 
 .category-badge, .difficulty-badge, .experience-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   color: white;
 }
@@ -235,25 +236,26 @@ body {
 }
 
 .mission-content {
-  padding: 1rem;
-  max-height: 300px;
+  padding: 0.75rem;
+  max-height: 250px;
   overflow-y: auto;
 }
 
 .mission-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .mission-section h4 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #555;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .mission-section p {
   color: #666;
-  line-height: 1.5;
+  line-height: 1.4;
+  font-size: 0.9rem;
 }
 
 .scrollable-content {
@@ -263,13 +265,14 @@ body {
 }
 
 .mission-footer {
-  padding: 1rem;
+  padding: 0.75rem;
   border-top: 1px solid #e0e0e0;
   background-color: #f8f9fa;
 }
 
 .pilot-experience {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .mission-stats {
@@ -282,12 +285,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem;
+  gap: 0.1rem;
+  padding: 0.25rem;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  min-width: 60px;
+  min-width: 50px;
 }
 
 .stat-item:hover {
@@ -295,17 +298,17 @@ body {
 }
 
 .stat-icon {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #666;
   font-weight: 500;
 }
 
 .stat-count {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #1976d2;
 }
