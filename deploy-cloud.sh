@@ -15,8 +15,7 @@ NC='\033[0m' # No Color
 # Default values
 IMAGE_NAME="aviation-missions"
 IMAGE_TAG="latest"
-WEB_PORT="8080"
-API_PORT="3000"
+PORT="3000"
 
 print_usage() {
     echo "Usage: $0 [PROVIDER] [OPTIONS]"
@@ -33,8 +32,7 @@ print_usage() {
     echo "Options:"
     echo "  --image-name NAME    Docker image name (default: aviation-missions)"
     echo "  --image-tag TAG      Docker image tag (default: latest)"
-    echo "  --web-port PORT      Web interface port (default: 8080)"
-    echo "  --api-port PORT      API server port (default: 3000)"
+    echo "  --port PORT          Application port (default: 3000)"
     echo "  --help               Show this help message"
 }
 
@@ -81,7 +79,7 @@ deploy_docker_hub() {
     IMAGE_FULL=$(build_and_push $DOCKER_USERNAME)
     
     log "✅ Image pushed to Docker Hub: $IMAGE_FULL"
-    log "You can now deploy using: docker run -p $WEB_PORT:8080 -p $API_PORT:3000 $IMAGE_FULL"
+    log "You can now deploy using: docker run -p $PORT:3000 $IMAGE_FULL"
 }
 
 deploy_aws_ecs() {

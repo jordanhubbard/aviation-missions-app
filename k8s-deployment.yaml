@@ -18,14 +18,10 @@ spec:
       - name: aviation-app
         image: your-registry/aviation-missions:latest
         ports:
-        - containerPort: 8080
-          name: web
         - containerPort: 3000
-          name: api
+          name: web
         env:
-        - name: WEB_PORT
-          value: "8080"
-        - name: API_PORT
+        - name: PORT
           value: "3000"
         - name: DATABASE_URL
           value: "jdbc:h2:./data/aviation-missions"
@@ -74,10 +70,6 @@ spec:
   - name: web
     protocol: TCP
     port: 80
-    targetPort: 8080
-  - name: api
-    protocol: TCP
-    port: 3000
     targetPort: 3000
   type: LoadBalancer
 
