@@ -26,6 +26,7 @@ help:
 	@echo ""
 	@echo "  start        - Build and start the complete application (production)"
 	@echo "  dev          - Build and start in development mode"
+	@echo "  restart      - Stop and restart the application (convenience command)"
 	@echo "  stop         - Stop the running application"
 	@echo "  logs         - View application logs (blocking)"
 	@echo "  clean        - Complete cleanup: stop, remove containers, images, and files"
@@ -97,6 +98,11 @@ stop:
 	-docker-compose -f $(COMPOSE_FILE) down 2>/dev/null || true
 	-docker-compose -f $(DEV_COMPOSE_FILE) down 2>/dev/null || true
 	@echo "✅ Application stopped successfully!"
+
+# Restart the application (stop + start)
+.PHONY: restart
+restart: stop start
+	@echo "🔄 Application restarted successfully!"
 
 # View application logs (blocking)
 .PHONY: logs

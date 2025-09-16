@@ -178,53 +178,76 @@ body {
 /* Mission cards */
 .missions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 1rem;
 }
 
 .mission-card {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
   cursor: pointer;
   overflow: hidden;
+  font-family: 'Courier New', monospace;
+  position: relative;
 }
 
 .mission-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  border-color: #1976d2;
 }
 
 .mission-header {
+  background: #f8f9fa;
+  border-bottom: 2px solid #1976d2;
   padding: 0.75rem;
-  border-bottom: 1px solid #e0e0e0;
+  position: relative;
+}
+
+.mission-header::after {
+  content: "FLIGHT MISSION CARD";
+  position: absolute;
+  top: 0.25rem;
+  right: 0.75rem;
+  font-size: 0.7rem;
+  color: #666;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 .mission-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1976d2;
-  margin-bottom: 0.25rem;
-  line-height: 1.3;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .mission-meta {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 .category-badge, .difficulty-badge, .experience-badge {
-  padding: 0.15rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: bold;
   color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(0,0,0,0.2);
 }
 
 .category-badge {
-  background-color: #6c757d;
+  background-color: #2c3e50;
 }
 
 .difficulty-badge {
@@ -232,30 +255,58 @@ body {
 }
 
 .experience-badge {
-  /* Color set dynamically */
+  background-color: #27ae60;
 }
 
 .mission-content {
   padding: 0.75rem;
-  max-height: 250px;
-  overflow-y: auto;
+  background: #fefefe;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.mission-data-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.mission-data-label {
+  font-weight: bold;
+  color: #000;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.mission-data-value {
+  color: #333;
+  font-weight: normal;
+  word-wrap: break-word;
 }
 
 .mission-section {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .mission-section h4 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #555;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #000;
   margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.1rem;
 }
 
 .mission-section p {
-  color: #666;
-  line-height: 1.4;
-  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.3;
+  font-size: 0.8rem;
+  margin: 0;
 }
 
 .scrollable-content {
@@ -265,52 +316,99 @@ body {
 }
 
 .mission-footer {
-  padding: 0.75rem;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f8f9fa;
+  padding: 0.5rem 0.75rem;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ccc;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem;
 }
 
 .pilot-experience {
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .mission-stats {
   display: flex;
-  justify-content: space-around;
-  gap: 0.5rem;
+  gap: 1rem;
+  align-items: center;
 }
 
 .stat-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  padding: 0.25rem;
-  border-radius: 4px;
+  gap: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 3px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  min-width: 50px;
+  transition: all 0.2s ease;
+  font-size: 0.7rem;
 }
 
 .stat-item:hover {
-  background-color: #e9ecef;
+  background-color: #e3f2fd;
+  border-color: #1976d2;
 }
 
 .stat-icon {
-  font-size: 1rem;
+  font-size: 0.8rem;
+  color: #666;
 }
 
 .stat-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #666;
-  font-weight: 500;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .stat-count {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: bold;
   color: #1976d2;
+}
+
+.mission-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-mission {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid #1976d2;
+  background: white;
+  color: #1976d2;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-mission:hover {
+  background: #1976d2;
+  color: white;
+}
+
+.btn-mission.primary {
+  background: #1976d2;
+  color: white;
+}
+
+.btn-mission.primary:hover {
+  background: #1565c0;
 }
 
 /* Forms */
@@ -614,18 +712,28 @@ body {
 
 /* Badge styles for difficulty levels */
 .badge-difficulty-1 {
-  background-color: #4caf50;
-  color: white;
+  background-color: #27ae60 !important;
+  color: white !important;
 }
 
 .badge-difficulty-2 {
-  background-color: #ff9800;
-  color: white;
+  background-color: #f39c12 !important;
+  color: white !important;
 }
 
-.badge-difficulty-3 {
-  background-color: #f44336;
-  color: white;
+.badge-difficulty-3,
+.badge-difficulty-4,
+.badge-difficulty-5 {
+  background-color: #e74c3c !important;
+  color: white !important;
+}
+
+.badge-difficulty-6,
+.badge-difficulty-7,
+.badge-difficulty-8,
+.badge-difficulty-9 {
+  background-color: #8e44ad !important;
+  color: white !important;
 }
 
 /* Mobile responsive for mission details */

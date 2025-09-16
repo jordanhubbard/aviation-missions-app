@@ -4,6 +4,7 @@
    [reagent.dom :as rdom]
    [cljs.core.async :refer [go <!]]
    [cljs-http.client :as http]
+   [clojure.string :as str]
    [aviation-missions.config :as config]))
 
 ;; Global state
@@ -71,30 +72,67 @@
 ;; Components
 (defn mission-card [mission]
   [:div.mission-card
-   [:div.card-header
+   [:div.mission-header
     [:h3.mission-title (:title mission)]
-    [:div.mission-badges
-     [:span.badge {:class (str "badge-difficulty-" (:difficulty mission))}
+    [:div.mission-meta
+     [:span.category-badge (:category mission)]
+     [:span.difficulty-badge {:class (str "badge-difficulty-" (:difficulty mission))}
       (case (:difficulty mission)
-        1 "Beginner"
-        2 "Intermediate" 
-        3 "Advanced"
-        "Unknown")]
-     [:span.badge.badge-outline (:category mission)]]]
+        1 "EASY"
+        2 "MEDIUM" 
+        3 "HARD"
+        4 "HARD"
+        5 "HARD"
+        6 "EXPERT"
+        7 "EXPERT"
+        8 "EXPERT"
+        9 "EXPERT"
+        "UNK")]
+     [:span.experience-badge (if (:pilot_experience mission)
+                              (-> (:pilot_experience mission)
+                                  (str/replace #"Beginner.*" "STUDENT")
+                                  (str/replace #"Intermediate.*" "PRIVATE")
+                                  (str/replace #"Advanced.*" "COMMERCIAL"))
+                              "STUDENT")]]]
    
-   [:div.card-body
-    [:p.mission-description (:mission_description mission)]
-    [:div.mission-details
-     [:div.detail-item
-      [:strong "Objective: "] (:objective mission)]
-     [:div.detail-item
-      [:strong "Pilot Experience: "] (:pilot_experience mission)]
-     [:div.detail-item
-      [:strong "Comments: "] (:comment_count mission) " | Completions: " (:completion_count mission)]]]
+   [:div.mission-content
+    [:div.mission-data-grid
+     [:span.mission-data-label "ROUTE:"]
+     [:span.mission-data-value (or (:route mission) (:suggested_route mission) "See description")]
+     
+     [:span.mission-data-label "OBJECTIVE:"]
+     [:span.mission-data-value (:objective mission)]
+     
+     [:span.mission-data-label "DESCRIPTION:"]
+     [:span.mission-data-value (:mission_description mission)]]
+    
+    (when (and (:notes mission) (not-empty (:notes mission)))
+      [:div.mission-section
+       [:h4 "Notes"]
+       [:p (:notes mission)]])
+    
+    (when (and (:special_challenges mission) (not-empty (:special_challenges mission)))
+      [:div.mission-section
+       [:h4 "Special Challenges"]
+       [:p (:special_challenges mission)]])]
    
-   [:div.card-actions
-    [:button.btn.btn-secondary {:on-click #(fetch-mission-details (:id mission))}
-     "View Details"]]])
+   [:div.mission-footer
+    [:div.pilot-experience 
+     (str "MIN EXP: " (or (:pilot_experience mission) "Student Pilot"))]
+    
+    [:div.mission-stats
+     [:div.stat-item
+      [:span.stat-icon "💬"]
+      [:span.stat-count (or (:comment_count mission) 0)]
+      [:span.stat-label "Comments"]]
+     
+     [:div.stat-item
+      [:span.stat-icon "✓"]
+      [:span.stat-count (or (:completion_count mission) 0)]
+      [:span.stat-label "Completed"]]
+     
+     [:button.btn-mission.primary {:on-click #(fetch-mission-details (:id mission))}
+      "BRIEF"]]]])
 
 (defn create-mission-dialog []
   (let [new-mission (:new-mission @app-state)]
