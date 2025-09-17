@@ -535,7 +535,7 @@
      [:a.nav-tab {:class (when (= (:current-page @app-state) :challenges) "active")
                   :on-click #(swap! app-state assoc :current-page :challenges)}
       [:span.nav-icon "🎯"]
-      [:span.nav-label "Challenges"]]]]])
+      [:span.nav-label "Challenges"]]]])])
 
 (defn app []
   [:div.app
