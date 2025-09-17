@@ -277,7 +277,7 @@
         [:span.stat-label "Completed"]]
        
        [:button.btn-mission.primary {:on-click #(fetch-mission-details (:id mission))}
-        "BRIEF"]]]]))
+        "BRIEF"]]))
 
 (defn create-mission-dialog []
   (let [new-mission (:new-mission @app-state)]
@@ -325,7 +325,7 @@
                               :on-change #(swap! app-state assoc-in [:new-mission :difficulty] (js/parseInt (.. % -target -value)))}
           [:option {:value "1"} "1 - Beginner"]
           [:option {:value "2"} "2 - Intermediate"]
-          [:option {:value "3"} "3 - Advanced"]]]]
+          [:option {:value "3"} "3 - Advanced"]]
        
        [:div.form-group
         [:label "Primary Objective *"]
@@ -343,7 +343,7 @@
                                                                 (not-empty (:why_description new-mission))
                                                                 (not-empty (:objective new-mission)))
                                                         (create-mission new-mission)))}
-        "Create Mission"]]]]))
+        "Create Mission"]]))
 
 (defn missions-page []
   [:div.missions-page
@@ -510,7 +510,7 @@
           [:button.btn.btn-secondary {:style {:width "100%" :margin-bottom "10px"}}
            "✓ Mark as Completed"]
           [:button.btn.btn-outline {:style {:width "100%"}}
-           "💬 Add Comment"]]]]))
+           "💬 Add Comment"]])
 
 (defn admin-panel []
   [:div.admin-panel
@@ -535,7 +535,7 @@
      [:a.nav-tab {:class (when (= (:current-page @app-state) :challenges) "active")
                   :on-click #(swap! app-state assoc :current-page :challenges)}
       [:span.nav-icon "🎯"]
-      [:span.nav-label "Challenges"]]]])])
+      [:span.nav-label "Challenges"]])
 
 (defn app []
   [:div.app
