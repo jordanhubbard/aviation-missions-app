@@ -376,14 +376,141 @@
    [create-mission-dialog]])
 
 (defn mission-details-page []
-  [:div.mission-details-page
-   [:div.page-header
-    [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :current-page :missions)}
-     "← Back to Missions"]
-    [:h1 "Mission Details"]
-    [:p "Mission details functionality coming soon..."]]
-   [:div.placeholder-content
-    [:p "This page will show detailed information about the selected mission."]]])
+  (let [state @app-state
+        mission (:mission-details state)
+        loading? (:mission-details-loading state)]
+    [:div.mission-details-page
+     [:div.page-header
+      [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :current-page :missions)}
+       "← Back to Missions"]
+      (if mission
+        [:h1.mission-title (:title mission)]
+        [:h1 "Mission Details"])]
+     
+     (cond
+       loading?
+       [:div.loading "Loading mission details..."]
+       
+       (not mission)
+       [:div.error "Mission not found or failed to load."]
+       
+       :else
+       [:div.mission-details-content
+        [:div.mission-details-main
+         ;; Mission Overview
+         [:div.detail-section
+          [:h3 "Mission Overview"]
+          [:div.mission-data-grid
+           [:span.mission-data-label "CATEGORY:"]
+           [:span.mission-data-value (:category mission)]
+           
+           [:span.mission-data-label "DIFFICULTY:"]
+           [:span.mission-data-value (case (:difficulty mission)
+                                       1 "EASY (1/9)"
+                                       2 "MEDIUM (2/9)"
+                                       3 "HARD (3/9)"
+                                       4 "HARD (4/9)"
+                                       5 "HARD (5/9)"
+                                       6 "EXPERT (6/9)"
+                                       7 "EXPERT (7/9)"
+                                       8 "EXPERT (8/9)"
+                                       9 "EXPERT (9/9)"
+                                       (str "LEVEL " (:difficulty mission)))]
+           
+           [:span.mission-data-label "PILOT EXPERIENCE:"]
+           [:span.mission-data-value (or (:pilot_experience mission) "Student Pilot")]
+           
+           [:span.mission-data-label "ROUTE:"]
+           [:span.mission-data-value (or (:route mission) (:suggested_route mission) "See description")]]]
+         
+         ;; Mission Objective
+         [:div.detail-section
+          [:h3 "Mission Objective"]
+          [:p (:objective mission)]]
+         
+         ;; Mission Description
+         [:div.detail-section
+          [:h3 "Mission Description"]
+          [:p (:mission_description mission)]]
+         
+         ;; Why This Mission
+         (when (and (:why_description mission) (not-empty (:why_description mission)))
+           [:div.detail-section
+            [:h3 "Why This Mission Matters"]
+            [:p (:why_description mission)]])
+         
+         ;; Flight Challenges
+         (let [challenges (analyze-mission-challenges mission)]
+           (when (seq challenges)
+             [:div.detail-section
+              [:h3 "Flight Challenges"]
+              [:div.challenges-grid
+               (for [challenge-key (sort challenges)]
+                 ^{:key challenge-key}
+                 [:div.challenge-item
+                  [:span.challenge-icon "⚠"]
+                  [:span.challenge-label (get challenge-definitions challenge-key)]])]]))
+         
+         ;; Notes
+         (when (and (:notes mission) (not-empty (:notes mission)))
+           [:div.detail-section
+            [:h3 "Important Notes"]
+            [:p (:notes mission)]])
+         
+         ;; Special Challenges
+         (when (and (:special_challenges mission) (not-empty (:special_challenges mission)))
+           [:div.detail-section
+            [:h3 "Special Challenges"]
+            [:p (:special_challenges mission)]])]
+        
+        ;; Sidebar
+        [:div.mission-details-sidebar
+         ;; Mission Stats
+         [:div.detail-card
+          [:h3 "Mission Statistics"]
+          [:div.detail-item
+           [:span.detail-label "Comments"]
+           [:span.detail-value (or (:comment_count mission) 0)]]
+          [:div.detail-item
+           [:span.detail-label "Completions"]
+           [:span.detail-value (or (:completion_count mission) 0)]]
+          [:div.detail-item
+           [:span.detail-label "Thumbs Up"]
+           [:span.detail-value (or (:thumbs_up mission) 0)]]
+          [:div.detail-item
+           [:span.detail-label "Thumbs Down"]
+           [:span.detail-value (or (:thumbs_down mission) 0)]]]
+         
+         ;; Mission Metadata
+         [:div.detail-card
+          [:h3 "Mission Information"]
+          [:div.detail-item
+           [:span.detail-label "Created"]
+           [:span.detail-value (if (:created_at mission)
+                                 (-> (:created_at mission)
+                                     (str/replace #"T.*" "")
+                                     (str/replace #"-" "/"))
+                                 "Unknown")]]
+          [:div.detail-item
+           [:span.detail-label "Last Updated"]
+           [:span.detail-value (if (:updated_at mission)
+                                 (-> (:updated_at mission)
+                                     (str/replace #"T.*" "")
+                                     (str/replace #"-" "/"))
+                                 "Unknown")]]
+          [:div.detail-item
+           [:span.detail-label "Mission ID"]
+           [:span.detail-value (str "#" (:id mission))]]]
+         
+         ;; Actions
+         [:div.detail-card
+          [:h3 "Actions"]
+          [:button.btn.btn-primary {:style {:width "100%" :margin-bottom "10px"}}
+           "📋 Print Mission Brief"]
+          [:button.btn.btn-secondary {:style {:width "100%" :margin-bottom "10px"}}
+           "✓ Mark as Completed"]
+          [:button.btn.btn-outline {:style {:width "100%"}}
+           "💬 Add Comment"]]]]))
 
 (defn admin-panel []
   [:div.admin-panel
