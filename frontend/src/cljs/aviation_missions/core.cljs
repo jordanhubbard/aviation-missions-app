@@ -14,6 +14,8 @@
                            :mission-details nil
                            :loading false
                            :mission-details-loading false
+                           :page-number 1
+                           :missions-per-page 8
                            :create-dialog-open false
                            :new-mission {:title ""
                                         :category "Training"
@@ -69,9 +71,48 @@
           (js/console.error "Failed to fetch mission details:" (:body response))
           (swap! app-state assoc :mission-details-loading false))))))
 
+;; Pagination helpers
+(defn get-paginated-missions [missions page-number per-page]
+  (let [start-idx (* (dec page-number) per-page)
+        end-idx (+ start-idx per-page)]
+    (->> missions
+         (drop start-idx)
+         (take per-page))))
+
+(defn get-total-pages [missions per-page]
+  (Math/ceil (/ (count missions) per-page)))
+
 ;; Components
+(defn page-navigation []
+  (let [state @app-state
+        total-missions (count (:missions state))
+        per-page (:missions-per-page state)
+        current-page (:page-number state)
+        total-pages (get-total-pages (:missions state) per-page)
+        start-mission (+ (* (dec current-page) per-page) 1)
+        end-mission (min (* current-page per-page) total-missions)]
+    [:div.page-navigation
+     [:button.nav-button
+      {:disabled (= current-page 1)
+       :on-click #(swap! app-state assoc :page-number 1)}
+      "⟪ FIRST"]
+     [:button.nav-button
+      {:disabled (= current-page 1)
+       :on-click #(swap! app-state update :page-number dec)}
+      "‹ PREV"]
+     [:div.page-info
+      (str "PAGE " current-page " OF " total-pages " • MISSIONS " start-mission "-" end-mission " OF " total-missions)]
+     [:button.nav-button
+      {:disabled (= current-page total-pages)
+       :on-click #(swap! app-state update :page-number inc)}
+      "NEXT ›"]
+     [:button.nav-button
+      {:disabled (= current-page total-pages)
+       :on-click #(swap! app-state assoc :page-number total-pages)}
+      "LAST ⟫"]]))
+
 (defn mission-card [mission]
-  [:div.mission-card {:tabindex 0}
+  [:div.mission-card
    [:div.mission-header
     [:h3.mission-title (:title mission)]
     [:div.mission-meta
@@ -207,17 +248,26 @@
     [:button.btn.btn-primary {:on-click #(swap! app-state assoc :create-dialog-open true)}
      "Create Mission"]]
    
-   (if (:loading @app-state)
-     [:div.loading "Loading missions..."]
+  (if (:loading @app-state)
+    [:div.loading "Loading missions..."]
+    
+    [:div
+     [page-navigation]
      
      [:div.missions-grid
       (if (empty? (:missions @app-state))
         [:div.empty-state
          [:p "No missions found. Create your first mission to get started!"]]
         
-        (for [mission (:missions @app-state)]
-          ^{:key (:id mission)}
-          [mission-card mission]))])
+        (let [paginated-missions (get-paginated-missions 
+                                   (:missions @app-state)
+                                   (:page-number @app-state)
+                                   (:missions-per-page @app-state))]
+          (for [mission paginated-missions]
+            ^{:key (:id mission)}
+            [mission-card mission])))]
+     
+     [page-navigation]])
    
    [create-mission-dialog]])
 

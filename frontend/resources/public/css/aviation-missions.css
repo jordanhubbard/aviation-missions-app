@@ -87,6 +87,62 @@ body {
   min-height: calc(100vh - 200px);
 }
 
+/* Page navigation */
+.page-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.nav-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 2px solid #1976d2;
+  background: white;
+  color: #1976d2;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.nav-button:hover {
+  background: #1976d2;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.nav-button:disabled:hover {
+  background: white;
+  color: #1976d2;
+}
+
+.page-info {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #333;
+  background: white;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
 /* Page headers */
 .page-header {
   display: flex;
@@ -178,9 +234,10 @@ body {
 /* Mission cards */
 .missions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 1rem;
-  align-items: start; /* Allow cards to have different heights */
+  align-items: stretch; /* Make all cards same height */
+  padding: 1rem 0;
 }
 
 .mission-card {
@@ -195,7 +252,8 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  max-height: none; /* Remove any height constraints */
+  height: 400px; /* Fixed height for uniform grid */
+  min-height: 400px;
 }
 
 .mission-card:hover {
@@ -204,18 +262,8 @@ body {
   border-color: #1976d2;
 }
 
-.mission-card:focus,
-.mission-card:focus-within {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
-  z-index: 10;
-  transform: translateY(-2px);
-}
-
-/* Visual indicator that card is scrollable when focused */
-.mission-card:focus .mission-content::after,
-.mission-card:focus-within .mission-content::after {
+/* Visual indicator that card is scrollable when hovered */
+.mission-card:hover .mission-content::after {
   content: "↕ SCROLL";
   position: absolute;
   top: 0.5rem;
@@ -228,7 +276,8 @@ body {
   font-weight: bold;
   letter-spacing: 0.5px;
   opacity: 0;
-  animation: fadeInScroll 0.5s ease-in-out 1s forwards;
+  animation: fadeInScroll 0.5s ease-in-out 0.5s forwards;
+  z-index: 20;
 }
 
 @keyframes fadeInScroll {
@@ -300,37 +349,32 @@ body {
   background: #fefefe;
   border-bottom: 1px solid #e0e0e0;
   flex: 1;
-  overflow: visible;
+  overflow: hidden;
   transition: all 0.3s ease;
+  position: relative;
 }
 
-.mission-card:focus .mission-content,
-.mission-card:focus-within .mission-content {
+.mission-card:hover .mission-content {
   overflow-y: auto;
-  max-height: 300px;
   scrollbar-width: thin;
   scrollbar-color: #1976d2 #f0f0f0;
 }
 
-.mission-card:focus .mission-content::-webkit-scrollbar,
-.mission-card:focus-within .mission-content::-webkit-scrollbar {
+.mission-card:hover .mission-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.mission-card:focus .mission-content::-webkit-scrollbar-track,
-.mission-card:focus-within .mission-content::-webkit-scrollbar-track {
+.mission-card:hover .mission-content::-webkit-scrollbar-track {
   background: #f0f0f0;
   border-radius: 3px;
 }
 
-.mission-card:focus .mission-content::-webkit-scrollbar-thumb,
-.mission-card:focus-within .mission-content::-webkit-scrollbar-thumb {
+.mission-card:hover .mission-content::-webkit-scrollbar-thumb {
   background: #1976d2;
   border-radius: 3px;
 }
 
-.mission-card:focus .mission-content::-webkit-scrollbar-thumb:hover,
-.mission-card:focus-within .mission-content::-webkit-scrollbar-thumb:hover {
+.mission-card:hover .mission-content::-webkit-scrollbar-thumb:hover {
   background: #1565c0;
 }
 
