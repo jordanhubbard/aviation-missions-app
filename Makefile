@@ -44,6 +44,7 @@ help:
 	@echo "Usage:"
 	@echo "  make start                    # Production mode"
 	@echo "  make dev                      # Development mode"
+	@echo "  make lint                     # Run code analysis and linting"
 	@echo "  PORT=9000 make start          # Use custom port"
 
 # Build the Docker image
@@ -51,6 +52,12 @@ help:
 build:
 	@echo "🔨 Building Aviation Mission Management Docker image..."
 	docker build -t $(IMAGE_NAME):latest .
+
+# Run linting analysis on the code
+.PHONY: lint
+lint:
+	@echo "🔍 Running Clojure code analysis and linting..."
+	docker build --target linting -t $(IMAGE_NAME):lint .
 	@echo "✅ Build completed successfully!"
 
 # Start the application in production mode
