@@ -71,7 +71,7 @@
 
 ;; Components
 (defn mission-card [mission]
-  [:div.mission-card
+  [:div.mission-card {:tabindex 0}
    [:div.mission-header
     [:h3.mission-title (:title mission)]
     [:div.mission-meta

@@ -180,6 +180,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 1rem;
+  align-items: start; /* Allow cards to have different heights */
 }
 
 .mission-card {
@@ -192,12 +193,48 @@ body {
   overflow: hidden;
   font-family: 'Courier New', monospace;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: none; /* Remove any height constraints */
 }
 
 .mission-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   border-color: #1976d2;
+}
+
+.mission-card:focus,
+.mission-card:focus-within {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  z-index: 10;
+  transform: translateY(-2px);
+}
+
+/* Visual indicator that card is scrollable when focused */
+.mission-card:focus .mission-content::after,
+.mission-card:focus-within .mission-content::after {
+  content: "↕ SCROLL";
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(25, 118, 210, 0.8);
+  color: white;
+  font-size: 0.6rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 2px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  animation: fadeInScroll 0.5s ease-in-out 1s forwards;
+}
+
+@keyframes fadeInScroll {
+  to {
+    opacity: 1;
+  }
 }
 
 .mission-header {
@@ -262,6 +299,39 @@ body {
   padding: 0.75rem;
   background: #fefefe;
   border-bottom: 1px solid #e0e0e0;
+  flex: 1;
+  overflow: visible;
+  transition: all 0.3s ease;
+}
+
+.mission-card:focus .mission-content,
+.mission-card:focus-within .mission-content {
+  overflow-y: auto;
+  max-height: 300px;
+  scrollbar-width: thin;
+  scrollbar-color: #1976d2 #f0f0f0;
+}
+
+.mission-card:focus .mission-content::-webkit-scrollbar,
+.mission-card:focus-within .mission-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mission-card:focus .mission-content::-webkit-scrollbar-track,
+.mission-card:focus-within .mission-content::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.mission-card:focus .mission-content::-webkit-scrollbar-thumb,
+.mission-card:focus-within .mission-content::-webkit-scrollbar-thumb {
+  background: #1976d2;
+  border-radius: 3px;
+}
+
+.mission-card:focus .mission-content::-webkit-scrollbar-thumb:hover,
+.mission-card:focus-within .mission-content::-webkit-scrollbar-thumb:hover {
+  background: #1565c0;
 }
 
 .mission-data-grid {
@@ -323,6 +393,7 @@ body {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 1rem;
+  flex-shrink: 0; /* Prevent footer from shrinking */
 }
 
 .pilot-experience {
