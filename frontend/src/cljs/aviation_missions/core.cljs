@@ -82,6 +82,107 @@
 (defn get-total-pages [missions per-page]
   (Math/ceil (/ (count missions) per-page)))
 
+;; Challenge analysis functions
+(def challenge-definitions
+  {:short-runway "Short Runway"
+   :narrow-runway "Narrow Runway" 
+   :high-da "High DA"
+   :mountain-flying "Mountain Flying"
+   :time-restrictions "Time Restrictions"
+   :soft-field "Soft Field"
+   :obstacles "Obstacles within 1 mile of threshold"
+   :complex-airspace "Complex Airspace"})
+
+(defn analyze-mission-challenges [mission]
+  "Analyze mission data to determine applicable challenges"
+  (let [description (str/lower-case (str (:mission_description mission) " " (:notes mission) " " (:objective mission)))
+        route (str/lower-case (or (:route mission) ""))
+        title (str/lower-case (:title mission))
+        category (str/lower-case (:category mission))
+        all-text (str description " " route " " title " " category)]
+    (cond-> #{}
+      ;; High DA challenges
+      (or (str/includes? all-text "density altitude")
+          (str/includes? all-text "high altitude")
+          (str/includes? all-text "mountain")
+          (str/includes? all-text "sierra")
+          (str/includes? all-text "truckee")
+          (str/includes? all-text "tahoe")
+          (str/includes? all-text "mammoth")
+          (str/includes? all-text "reno")
+          (str/includes? all-text "death valley")
+          (str/includes? all-text "furnace creek"))
+      (conj :high-da)
+      
+      ;; Mountain Flying
+      (or (str/includes? all-text "mountain")
+          (str/includes? all-text "sierra")
+          (str/includes? all-text "terrain clearance")
+          (str/includes? all-text "valley")
+          (str/includes? all-text "downdraft")
+          (str/includes? all-text "updraft"))
+      (conj :mountain-flying)
+      
+      ;; Complex Airspace
+      (or (str/includes? all-text "class b")
+          (str/includes? all-text "class c")
+          (str/includes? all-text "bravo")
+          (str/includes? all-text "charlie")
+          (str/includes? all-text "clearance")
+          (str/includes? all-text "atc")
+          (str/includes? all-text "approach control")
+          (str/includes? all-text "moa")
+          (str/includes? all-text "airspace"))
+      (conj :complex-airspace)
+      
+      ;; Short Runway
+      (or (str/includes? all-text "short")
+          (str/includes? all-text "0q5")
+          (str/includes? all-text "shelter cove")
+          (str/includes? all-text "1o2")
+          (str/includes? all-text "lampson")
+          (str/includes? all-text "o22")
+          (str/includes? all-text "columbia")
+          (str/includes? all-text "l06")
+          (str/includes? all-text "furnace creek"))
+      (conj :short-runway)
+      
+      ;; Soft Field
+      (or (str/includes? all-text "soft field")
+          (str/includes? all-text "grass")
+          (str/includes? all-text "dirt")
+          (str/includes? all-text "rough")
+          (str/includes? all-text "gravel"))
+      (conj :soft-field)
+      
+      ;; Obstacles
+      (or (str/includes? all-text "obstacle")
+          (str/includes? all-text "terrain")
+          (str/includes? all-text "wake turbulence")
+          (str/includes? all-text "downdraft")
+          (str/includes? all-text "challenging winds"))
+      (conj :obstacles)
+      
+      ;; Time Restrictions  
+      (or (str/includes? all-text "time")
+          (str/includes? all-text "morning departure")
+          (str/includes? all-text "afternoon")
+          (str/includes? all-text "peak hours")
+          (str/includes? all-text "busy"))
+      (conj :time-restrictions))))
+
+(defn challenges-table [challenges]
+  "Display challenges as a compact table"
+  (when (seq challenges)
+    [:div.challenges-section
+     [:h4 "FLIGHT CHALLENGES"]
+     [:div.challenges-grid
+      (for [challenge-key (sort challenges)]
+        ^{:key challenge-key}
+        [:div.challenge-item
+         [:span.challenge-icon "⚠"]
+         [:span.challenge-label (get challenge-definitions challenge-key)]])]]))
+
 ;; Components
 (defn page-navigation []
   (let [state @app-state
@@ -112,68 +213,71 @@
       "LAST ⟫"]]))
 
 (defn mission-card [mission]
-  [:div.mission-card
-   [:div.mission-header
-    [:h3.mission-title (:title mission)]
-    [:div.mission-meta
-     [:span.category-badge (:category mission)]
-     [:span.difficulty-badge {:class (str "badge-difficulty-" (:difficulty mission))}
-      (case (:difficulty mission)
-        1 "EASY"
-        2 "MEDIUM" 
-        3 "HARD"
-        4 "HARD"
-        5 "HARD"
-        6 "EXPERT"
-        7 "EXPERT"
-        8 "EXPERT"
-        9 "EXPERT"
-        "UNK")]
-     [:span.experience-badge (if (:pilot_experience mission)
-                              (-> (:pilot_experience mission)
-                                  (str/replace #"Beginner.*" "STUDENT")
-                                  (str/replace #"Intermediate.*" "PRIVATE")
-                                  (str/replace #"Advanced.*" "COMMERCIAL"))
-                              "STUDENT")]]]
-   
-   [:div.mission-content
-    [:div.mission-data-grid
-     [:span.mission-data-label "ROUTE:"]
-     [:span.mission-data-value (or (:route mission) (:suggested_route mission) "See description")]
+  (let [challenges (analyze-mission-challenges mission)]
+    [:div.mission-card
+     [:div.mission-header
+      [:h3.mission-title (:title mission)]
+      [:div.mission-meta
+       [:span.category-badge (:category mission)]
+       [:span.difficulty-badge {:class (str "badge-difficulty-" (:difficulty mission))}
+        (case (:difficulty mission)
+          1 "EASY"
+          2 "MEDIUM" 
+          3 "HARD"
+          4 "HARD"
+          5 "HARD"
+          6 "EXPERT"
+          7 "EXPERT"
+          8 "EXPERT"
+          9 "EXPERT"
+          "UNK")]
+       [:span.experience-badge (if (:pilot_experience mission)
+                                (-> (:pilot_experience mission)
+                                    (str/replace #"Beginner.*" "STUDENT")
+                                    (str/replace #"Intermediate.*" "PRIVATE")
+                                    (str/replace #"Advanced.*" "COMMERCIAL"))
+                                "STUDENT")]]]
      
-     [:span.mission-data-label "OBJECTIVE:"]
-     [:span.mission-data-value (:objective mission)]
+     [:div.mission-content
+      [:div.mission-data-grid
+       [:span.mission-data-label "ROUTE:"]
+       [:span.mission-data-value (or (:route mission) (:suggested_route mission) "See description")]
+       
+       [:span.mission-data-label "OBJECTIVE:"]
+       [:span.mission-data-value (:objective mission)]
+       
+       [:span.mission-data-label "DESCRIPTION:"]
+       [:span.mission-data-value (:mission_description mission)]]
+      
+      [challenges-table challenges]
+      
+      (when (and (:notes mission) (not-empty (:notes mission)))
+        [:div.mission-section
+         [:h4 "Notes"]
+         [:p (:notes mission)]])
+      
+      (when (and (:special_challenges mission) (not-empty (:special_challenges mission)))
+        [:div.mission-section
+         [:h4 "Special Challenges"]
+         [:p (:special_challenges mission)]])]
      
-     [:span.mission-data-label "DESCRIPTION:"]
-     [:span.mission-data-value (:mission_description mission)]]
-    
-    (when (and (:notes mission) (not-empty (:notes mission)))
-      [:div.mission-section
-       [:h4 "Notes"]
-       [:p (:notes mission)]])
-    
-    (when (and (:special_challenges mission) (not-empty (:special_challenges mission)))
-      [:div.mission-section
-       [:h4 "Special Challenges"]
-       [:p (:special_challenges mission)]])]
-   
-   [:div.mission-footer
-    [:div.pilot-experience 
-     (str "MIN EXP: " (or (:pilot_experience mission) "Student Pilot"))]
-    
-    [:div.mission-stats
-     [:div.stat-item
-      [:span.stat-icon "💬"]
-      [:span.stat-count (or (:comment_count mission) 0)]
-      [:span.stat-label "Comments"]]
-     
-     [:div.stat-item
-      [:span.stat-icon "✓"]
-      [:span.stat-count (or (:completion_count mission) 0)]
-      [:span.stat-label "Completed"]]
-     
-     [:button.btn-mission.primary {:on-click #(fetch-mission-details (:id mission))}
-      "BRIEF"]]]])
+     [:div.mission-footer
+      [:div.pilot-experience 
+       (str "MIN EXP: " (or (:pilot_experience mission) "Student Pilot"))]
+      
+      [:div.mission-stats
+       [:div.stat-item
+        [:span.stat-icon "💬"]
+        [:span.stat-count (or (:comment_count mission) 0)]
+        [:span.stat-label "Comments"]]
+       
+       [:div.stat-item
+        [:span.stat-icon "✓"]
+        [:span.stat-count (or (:completion_count mission) 0)]
+        [:span.stat-label "Completed"]]
+       
+       [:button.btn-mission.primary {:on-click #(fetch-mission-details (:id mission))}
+        "BRIEF"]]]]))
 
 (defn create-mission-dialog []
   (let [new-mission (:new-mission @app-state)]

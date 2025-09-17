@@ -423,6 +423,54 @@ body {
   margin: 0;
 }
 
+/* Flight Challenges */
+.challenges-section {
+  margin: 0.75rem 0;
+}
+
+.challenges-section h4 {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.1rem;
+}
+
+.challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.challenge-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.4rem;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #856404;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.challenge-icon {
+  font-size: 0.8rem;
+  color: #f39c12;
+}
+
+.challenge-label {
+  font-size: 0.65rem;
+  line-height: 1.1;
+}
+
 .scrollable-content {
   max-height: 100px;
   overflow-y: auto;
