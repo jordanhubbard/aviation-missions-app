@@ -114,13 +114,19 @@
           (str/includes? all-text "furnace creek"))
       (conj :high-da)
       
-      ;; Mountain Flying
-      (or (str/includes? all-text "mountain")
+      ;; Mountain Flying - be more specific to avoid false positives
+      (or (and (str/includes? all-text "mountain")
+               (or (str/includes? all-text "flying")
+                   (str/includes? all-text "terrain")
+                   (str/includes? all-text "valley")
+                   (str/includes? all-text "downdraft")
+                   (str/includes? all-text "updraft")))
           (str/includes? all-text "sierra")
-          (str/includes? all-text "terrain clearance")
-          (str/includes? all-text "valley")
-          (str/includes? all-text "downdraft")
-          (str/includes? all-text "updraft"))
+          (str/includes? all-text "ktrk") ; Truckee, mountain airport
+          (str/includes? all-text "kmmh") ; Mammoth Lakes, mountain airport
+          (str/includes? all-text "high altitude")
+          (str/includes? all-text "density altitude")
+          (str/includes? all-text "terrain clearance"))
       (conj :mountain-flying)
       
       ;; Complex Airspace
@@ -170,6 +176,77 @@
           (str/includes? all-text "peak hours")
           (str/includes? all-text "busy"))
       (conj :time-restrictions))))
+
+;; Admin Panel Functions
+(defn export-missions []
+  "Export all missions as JSON file"
+  (let [missions-data {:missions (:missions @app-state)
+                       :exported-at (js/Date.)
+                       :version "2.1"}
+        json-str (js/JSON.stringify (clj->js missions-data) nil 2)
+        blob (js/Blob. [json-str] #js {:type "application/json"})
+        url (js/URL.createObjectURL blob)
+        link (js/document.createElement "a")]
+    (set! (.-href link) url)
+    (set! (.-download link) (str "aviation-missions-" (.toISOString (js/Date.)) ".json"))
+    (.click link)
+    (js/URL.revokeObjectURL url)
+    (js/console.log "Missions exported successfully")))
+
+(defn import-missions [file]
+  "Import missions from JSON file"
+  (when file
+    (let [reader (js/FileReader.)]
+      (set! (.-onload reader)
+            (fn [e]
+              (try
+                (let [json-data (js/JSON.parse (.-result e))
+                      missions (js->clj (.-missions json-data) :keywordize-keys true)]
+                  (swap! app-state assoc :missions missions)
+                  (js/console.log "Missions imported successfully" (count missions) "missions")
+                  (js/alert (str "Successfully imported " (count missions) " missions!")))
+                (catch js/Error e
+                  (js/console.error "Import error:" e)
+                  (js/alert "Error importing missions. Please check the file format.")))))
+      (.readAsText reader file))))
+
+(defn refresh-missions []
+  "Refresh missions from server"
+  (swap! app-state assoc :loading true)
+  (go
+    (let [response (<! (http/get "/missions"))]
+      (if (= (:status response) 200)
+        (do
+          (swap! app-state assoc :missions (:body response))
+          (swap! app-state assoc :loading false)
+          (js/console.log "Missions refreshed successfully"))
+        (do
+          (swap! app-state assoc :loading false)
+          (js/console.error "Failed to refresh missions"))))))
+
+(defn clear-mission-cache []
+  "Clear mission cache and reload"
+  (when (js/confirm "Are you sure you want to clear the mission cache?")
+    (swap! app-state assoc :missions [])
+    (refresh-missions)
+    (js/console.log "Mission cache cleared")))
+
+(defn validate-missions []
+  "Validate mission data integrity"
+  (let [missions (:missions @app-state)
+        validation-errors (atom [])]
+    (doseq [mission missions]
+      (when (not (:title mission))
+        (swap! validation-errors conj (str "Mission missing title: " (:id mission))))
+      (when (not (:category mission))
+        (swap! validation-errors conj (str "Mission missing category: " (:id mission))))
+      (when (not (:difficulty mission))
+        (swap! validation-errors conj (str "Mission missing difficulty: " (:id mission)))))
+    
+    (if (empty? @validation-errors)
+      (js/alert "✅ All missions are valid!")
+      (js/alert (str "❌ Found " (count @validation-errors) " validation errors:\n" 
+                     (str/join "\n" @validation-errors))))))
 
 (defn challenges-table [challenges]
   "Display challenges as a compact table"
@@ -515,10 +592,64 @@
 (defn admin-panel []
   [:div.admin-panel
    [:div.page-header
-    [:h1 "Admin Panel"]
-    [:p "Administrative functionality coming soon..."]]
-   [:div.placeholder-content
-    [:p "This page will allow admins to manage missions, review submissions, and configure the system."]]])
+    [:h1 "⚙️ Admin Panel"]
+    [:p "Mission database management and system administration"]]
+   
+   [:div.admin-content
+    [:div.admin-section
+     [:h2 "📊 Database Management"]
+     [:div.admin-cards
+      [:div.admin-card
+       [:h3 "Export Missions"]
+       [:p "Download all missions as JSON file"]
+       [:button.btn.btn-primary {:on-click #(export-missions)}
+        "📥 Export JSON"]]
+      
+      [:div.admin-card
+       [:h3 "Import Missions"]
+       [:p "Upload missions from JSON file"]
+       [:input {:type "file"
+                :accept ".json"
+                :on-change #(import-missions (-> % .-target .-files (aget 0)))}]
+       [:button.btn.btn-secondary {:on-click #(document.querySelector "input[type=file]")}
+        "📤 Choose File"]]]
+    
+    [:div.admin-section
+     [:h2 "📈 System Statistics"]
+     [:div.stats-grid
+      [:div.stat-card
+       [:h3 "Total Missions"]
+       [:div.stat-value (count (:missions @app-state))]]
+      [:div.stat-card
+       [:h3 "Categories"]
+       [:div.stat-value (count (set (map :category (:missions @app-state))))]]
+      [:div.stat-card
+       [:h3 "Avg Difficulty"]
+       [:div.stat-value (if (seq (:missions @app-state))
+                          (->> (:missions @app-state)
+                               (map :difficulty)
+                               (filter number?)
+                               (reduce +)
+                               (/ (count (filter number? (map :difficulty (:missions @app-state))))))
+                          "N/A")]]]]
+    
+    [:div.admin-section
+     [:h2 "🔧 Mission Management"]
+     [:div.admin-actions
+      [:button.btn.btn-warning {:on-click #(refresh-missions)}
+       "🔄 Refresh Missions"]
+      [:button.btn.btn-danger {:on-click #(clear-mission-cache)}
+       "🗑️ Clear Cache"]
+      [:button.btn.btn-info {:on-click #(validate-missions)}
+       "✅ Validate Data"]]]
+    
+    [:div.admin-section
+     [:h2 "📋 Recent Activity"]
+     [:div.activity-log
+      [:p "System logs and recent changes will appear here."]
+      [:div.log-entry
+       [:span.log-time (str "Last updated: " (js/Date.))]
+       [:span.log-message "Admin panel loaded successfully"]]]]])
 
 (defn navigation []
   [:nav.navigation
