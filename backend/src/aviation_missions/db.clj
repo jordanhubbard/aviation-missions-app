@@ -1,7 +1,8 @@
 (ns aviation-missions.db
   (:require [clojure.java.jdbc :as jdbc]
             [clj-time.core :as time]
-            [clj-time.coerce :as coerce]))
+            [clj-time.coerce :as coerce]
+            [clojure.tools.logging :as log]))
 
 (def db-spec
   {:classname "org.h2.Driver"

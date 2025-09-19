@@ -17,12 +17,146 @@
                            :page-number 1
                            :missions-per-page 8
                            :create-dialog-open false
+                           :login-dialog-open false
+                           :admin-authenticated false
+                           :admin-token nil
+                           :admin-name nil
+                           :submissions []
+                           :pending-updates []
+                           :edit-mission-id nil
+                           :edit-dialog-open false
                            :new-mission {:title ""
                                         :category "Training"
                                         :difficulty 1
                                         :objective ""
                                         :mission_description ""
-                                        :why_description ""}}))
+                                        :why_description ""}
+                           :login-credentials {:admin_name ""
+                                              :password ""}}))
+
+;; Authentication functions
+(defn admin-login [credentials]
+  (go
+    (let [response (<! (http/post (str config/api-base-url "/admin/login") {:json-params credentials}))]
+      (if (= 200 (:status response))
+        (let [body (:body response)
+              token (:token body)
+              admin-name (:admin_name body)]
+          (js/console.log "Admin login successful")
+          (swap! app-state assoc
+                 :admin-authenticated true
+                 :admin-token token
+                 :admin-name admin-name
+                 :login-dialog-open false
+                 :current-page :admin
+                 :login-credentials {:admin_name "" :password ""})
+          (.setItem js/localStorage "admin-token" token)
+          (.setItem js/localStorage "admin-name" admin-name))
+        (do
+          (js/console.error "Admin login failed:" (:body response))
+          (js/alert "Login failed. Please check your credentials."))))))
+
+(defn admin-logout []
+  (swap! app-state assoc
+         :admin-authenticated false
+         :admin-token nil
+         :admin-name nil
+         :current-page :missions)
+  (.removeItem js/localStorage "admin-token")
+  (.removeItem js/localStorage "admin-name")
+  (js/console.log "Admin logged out"))
+
+(defn check-admin-status []
+  "Check if user is authenticated on app load"
+  (let [stored-token (.getItem js/localStorage "admin-token")
+        stored-name (.getItem js/localStorage "admin-name")]
+    (when (and stored-token stored-name)
+      (go
+        (let [response (<! (http/get (str config/api-base-url "/admin/status")
+                                     {:headers {"Authorization" (str "Bearer " stored-token)}}))]
+          (if (and (= 200 (:status response))
+                   (:is_admin (:body response)))
+            (do
+              (js/console.log "Admin session restored")
+              (swap! app-state assoc
+                     :admin-authenticated true
+                     :admin-token stored-token
+                     :admin-name stored-name))
+            (do
+              (js/console.log "Admin session expired")
+              (admin-logout))))))))
+
+(defn fetch-submissions []
+  "Fetch pending submissions (admin only)"
+  (when (:admin-authenticated @app-state)
+    (go
+      (let [response (<! (http/get (str config/api-base-url "/submissions")
+                                   {:headers {"Authorization" (str "Bearer " (:admin-token @app-state))}}))]
+        (if (= 200 (:status response))
+          (swap! app-state assoc :submissions (:submissions (:body response)))
+          (js/console.error "Failed to fetch submissions:" (:body response)))))))
+
+(defn fetch-pending-updates []
+  "Fetch pending mission updates (admin only)"
+  (when (:admin-authenticated @app-state)
+    (go
+      (let [response (<! (http/get (str config/api-base-url "/updates")
+                                   {:headers {"Authorization" (str "Bearer " (:admin-token @app-state))}}))]
+        (if (= 200 (:status response))
+          (swap! app-state assoc :pending-updates (:updates (:body response)))
+          (js/console.error "Failed to fetch pending updates:" (:body response)))))))
+
+(defn approve-submission [submission-id]
+  "Approve a mission submission"
+  (when (:admin-authenticated @app-state)
+    (go
+      (let [response (<! (http/put (str config/api-base-url "/submissions/" submission-id "/approve")
+                                   {:headers {"Authorization" (str "Bearer " (:admin-token @app-state))}}))]
+        (if (= 200 (:status response))
+          (do
+            (js/console.log "Submission approved successfully")
+            (fetch-submissions)
+            (fetch-missions))
+          (js/console.error "Failed to approve submission:" (:body response)))))))
+
+(defn reject-submission [submission-id]
+  "Reject a mission submission"
+  (when (:admin-authenticated @app-state)
+    (go
+      (let [response (<! (http/put (str config/api-base-url "/submissions/" submission-id "/reject")
+                                   {:headers {"Authorization" (str "Bearer " (:admin-token @app-state))}}))]
+        (if (= 200 (:status response))
+          (do
+            (js/console.log "Submission rejected successfully")
+            (fetch-submissions))
+          (js/console.error "Failed to reject submission:" (:body response)))))))
+
+(defn delete-mission [mission-id]
+  "Delete a mission (admin only)"
+  (when (and (:admin-authenticated @app-state)
+             (js/confirm "Are you sure you want to delete this mission? This action cannot be undone."))
+    (go
+      (let [response (<! (http/delete (str config/api-base-url "/missions/" mission-id)
+                                      {:headers {"Authorization" (str "Bearer " (:admin-token @app-state))}}))]
+        (if (= 200 (:status response))
+          (do
+            (js/console.log "Mission deleted successfully")
+            (fetch-missions))
+          (js/console.error "Failed to delete mission:" (:body response)))))))
+
+(defn update-mission [mission-id mission-data]
+  "Update an existing mission (admin only)"
+  (when (:admin-authenticated @app-state)
+    (go
+      (let [response (<! (http/put (str config/api-base-url "/missions/" mission-id)
+                                   {:json-params mission-data
+                                    :headers {"Authorization" (str "Bearer " (:admin-token @app-state))}}))]
+        (if (= 200 (:status response))
+          (do
+            (js/console.log "Mission updated successfully")
+            (swap! app-state assoc :edit-dialog-open false)
+            (fetch-missions))
+          (js/console.error "Failed to update mission:" (:body response)))))))
 
 ;; API functions
 (defn fetch-missions []
@@ -43,7 +177,12 @@
 
 (defn create-mission [mission]
   (go
-    (let [response (<! (http/post "/missions" {:json-params mission}))]
+    (let [headers (if (:admin-authenticated @app-state)
+                    {"Authorization" (str "Bearer " (:admin-token @app-state))}
+                    {})
+          response (<! (http/post (str config/api-base-url "/missions")
+                                  {:json-params mission
+                                   :headers headers}))]
       (if (or (= 200 (:status response)) (= 201 (:status response)))
         (do
           (js/console.log "Mission created successfully!")
@@ -54,15 +193,17 @@
                                               :objective ""
                                               :mission_description ""
                                               :why_description ""})
-          (fetch-missions))
+          (fetch-missions)
+          (when (:admin-authenticated @app-state)
+            (fetch-submissions)))
         (js/console.error "Failed to create mission:" (:body response))))))
 
 (defn fetch-mission-details [mission-id]
   (swap! app-state assoc :mission-details-loading true)
   (go
-    (let [response (<! (http/get (str "/missions/" mission-id)))]
+    (let [response (<! (http/get (str config/api-base-url "/missions/" mission-id)))]
       (if (= 200 (:status response))
-        (swap! app-state assoc 
+        (swap! app-state assoc
                :mission-details (:mission (:body response))
                :mission-details-loading false
                :selected-mission-id mission-id
@@ -454,7 +595,9 @@
     [:span.fab-icon "✈️"]
     [:span.fab-label "Create Mission"]]
    
-   [create-mission-dialog]])
+   [create-mission-dialog]
+   [admin-login-dialog]
+   [edit-mission-dialog]])
 
 (defn mission-details-page []
   (let [state @app-state
@@ -591,7 +734,122 @@
           [:button.btn.btn-secondary {:style {:width "100%" :margin-bottom "10px"}}
            "✓ Mark as Completed"]
           [:button.btn.btn-outline {:style {:width "100%"}}
-           "💬 Add Comment"]]]]])
+           "💬 Add Comment"]
+
+          ;; Admin-only actions
+          (when (:admin-authenticated @app-state)
+            [:div
+             [:hr {:style {:margin "10px 0"}}]
+             [:button.btn.btn-warning {:style {:width "100%" :margin-bottom "10px"}
+                                       :on-click #(do
+                                                    (swap! app-state assoc
+                                                           :edit-mission-id (:id mission)
+                                                           :edit-mission-data mission
+                                                           :edit-dialog-open true))}
+              "✏️ Edit Mission"]
+             [:button.btn.btn-danger {:style {:width "100%"}
+                                       :on-click #(delete-mission (:id mission))}
+              "🗑️ Delete Mission"]]])
+
+(defn admin-login-dialog []
+  (let [credentials (:login-credentials @app-state)]
+    [:div.modal {:class (when (:login-dialog-open @app-state) "modal-open")}
+     [:div.modal-backdrop {:on-click #(swap! app-state assoc :login-dialog-open false)}]
+     [:div.modal-content
+      [:div.modal-header
+       [:h2 "🔐 Administrator Login"]
+       [:button.modal-close {:on-click #(swap! app-state assoc :login-dialog-open false)} "×"]]
+
+      [:div.modal-body
+       [:div.form-group
+        [:label "Admin Username"]
+        [:input.form-input {:type "text"
+                           :value (:admin_name credentials)
+                           :placeholder "Enter admin username"
+                           :on-change #(swap! app-state assoc-in [:login-credentials :admin_name] (.. % -target -value))}]]
+
+       [:div.form-group
+        [:label "Password"]
+        [:input.form-input {:type "password"
+                           :value (:password credentials)
+                           :placeholder "Enter admin password"
+                           :on-change #(swap! app-state assoc-in [:login-credentials :password] (.. % -target -value))
+                           :on-key-press #(when (= (.-key %) "Enter")
+                                            (admin-login credentials))}]]
+
+       [:div.admin-info
+        [:p "Default credentials for demo:"]
+        [:p "Username: " [:code "admin"]]
+        [:p "Password: " [:code "aviation123"]]]]
+
+      [:div.modal-footer
+       [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :login-dialog-open false)}
+        "Cancel"]
+       [:button.btn.btn-primary {:on-click #(admin-login credentials)
+                                 :disabled (or (empty? (:admin_name credentials))
+                                              (empty? (:password credentials)))}
+        "🔓 Login"]]]]))
+
+(defn edit-mission-dialog []
+  (let [mission (:mission-details @app-state)
+        edit-data (or (:edit-mission-data @app-state) mission)]
+    [:div.modal {:class (when (:edit-dialog-open @app-state) "modal-open")}
+     [:div.modal-backdrop {:on-click #(swap! app-state assoc :edit-dialog-open false)}]
+     [:div.modal-content
+      [:div.modal-header
+       [:h2 "✏️ Edit Mission"]
+       [:button.modal-close {:on-click #(swap! app-state assoc :edit-dialog-open false)} "×"]]
+
+      [:div.modal-body
+       [:div.form-group
+        [:label "Mission Title *"]
+        [:input.form-input {:type "text"
+                           :value (:title edit-data)
+                           :on-change #(swap! app-state assoc-in [:edit-mission-data :title] (.. % -target -value))}]]
+
+       [:div.form-group
+        [:label "Mission Description *"]
+        [:textarea.form-textarea {:value (:mission_description edit-data)
+                                 :rows 3
+                                 :on-change #(swap! app-state assoc-in [:edit-mission-data :mission_description] (.. % -target -value))}]]
+
+       [:div.form-group
+        [:label "Why This Mission? *"]
+        [:textarea.form-textarea {:value (:why_description edit-data)
+                                 :rows 2
+                                 :on-change #(swap! app-state assoc-in [:edit-mission-data :why_description] (.. % -target -value))}]]
+
+       [:div.form-row
+        [:div.form-group
+         [:label "Category"]
+         [:select.form-select {:value (:category edit-data)
+                              :on-change #(swap! app-state assoc-in [:edit-mission-data :category] (.. % -target -value))}
+          [:option {:value "Training"} "Training"]
+          [:option {:value "Proficiency"} "Proficiency"]
+          [:option {:value "Cross-Country"} "Cross-Country"]
+          [:option {:value "Emergency"} "Emergency Procedures"]]]
+
+        [:div.form-group
+         [:label "Difficulty"]
+         [:select.form-select {:value (:difficulty edit-data)
+                              :on-change #(swap! app-state assoc-in [:edit-mission-data :difficulty] (js/parseInt (.. % -target -value)))}
+          [:option {:value "1"} "1 - Beginner"]
+          [:option {:value "2"} "2 - Intermediate"]
+          [:option {:value "3"} "3 - Advanced"]]]]
+
+       [:div.form-group
+        [:label "Primary Objective *"]
+        [:input.form-input {:type "text"
+                           :value (:objective edit-data)
+                           :on-change #(swap! app-state assoc-in [:edit-mission-data :objective] (.. % -target -value))}]]]
+
+      [:div.modal-footer
+       [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :edit-dialog-open false)}
+        "Cancel"]
+       [:button.btn.btn-primary {:on-click (fn []
+                                             (update-mission (:edit-mission-id @app-state) (:edit-mission-data @app-state))
+                                             (swap! app-state dissoc :edit-mission-data))}
+        "💾 Save Changes"]]]]))
 
 (defn admin-panel []
   [:div.admin-panel
@@ -645,7 +903,7 @@
       [:button.btn.btn-danger {:on-click #(clear-mission-cache)}
        "🗑️ Clear Cache"]
       [:button.btn.btn-info {:on-click #(validate-missions)}
-       "✅ Validate Data"]]]
+       "✅ Validate Data"]]]]
     
     [:div.admin-section
      [:h2 "📋 Recent Activity"]
@@ -653,7 +911,7 @@
       [:p "System logs and recent changes will appear here."]
       [:div.log-entry
        [:span.log-time (str "Last updated: " (js/Date.))]
-       [:span.log-message "Admin panel loaded successfully"]]]]])
+       [:span.log-message "Admin panel loaded successfully"]]]]]])
 
 (defn navigation []
   [:nav.navigation
@@ -663,14 +921,24 @@
                   :on-click #(swap! app-state assoc :current-page :missions)}
       [:span.nav-icon "✈️"]
       [:span.nav-label "Missions"]]
-     [:a.nav-tab {:class (when (= (:current-page @app-state) :admin) "active")
-                  :on-click #(swap! app-state assoc :current-page :admin)}
-      [:span.nav-icon "⚙️"]
-      [:span.nav-label "Admin"]]
+
+     ;; Admin tab - only show if authenticated, otherwise show login button
+     (if (:admin-authenticated @app-state)
+       [:a.nav-tab {:class (when (= (:current-page @app-state) :admin) "active")
+                    :on-click #(do
+                                 (fetch-submissions)
+                                 (fetch-pending-updates)
+                                 (swap! app-state assoc :current-page :admin))}
+        [:span.nav-icon "⚙️"]
+        [:span.nav-label "Admin Panel"]]
+       [:a.nav-tab {:on-click #(swap! app-state assoc :login-dialog-open true)}
+        [:span.nav-icon "🔐"]
+        [:span.nav-label "Admin Login"]])
+
      [:a.nav-tab {:class (when (= (:current-page @app-state) :challenges) "active")
                   :on-click #(swap! app-state assoc :current-page :challenges)}
       [:span.nav-icon "🎯"]
-       [:span.nav-label "Challenges"]]]]])
+      [:span.nav-label "Challenges"]]]]])
 (defn app []
   [:div.app
    [:header.app-header
@@ -703,5 +971,6 @@
   (js/console.log "API base URL:" config/api-base-url)
   (dev-setup)
   (mount-root)
-  (js/console.log "App mounted, fetching missions...")
+  (js/console.log "App mounted, checking admin status and fetching missions...")
+  (check-admin-status)
   (fetch-missions))

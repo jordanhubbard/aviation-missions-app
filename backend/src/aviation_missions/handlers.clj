@@ -1,40 +1,80 @@
 (ns aviation-missions.handlers
   (:require [ring.util.response :refer [response status]]
             [aviation-missions.db :as db]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.spec.alpha :as s]
+            [clojure.tools.logging :as log]))
+
+;; Data validation specs
+(s/def ::non-empty-string (s/and string? #(not (str/blank? %))))
+(s/def ::title ::non-empty-string)
+(s/def ::category #{"Training" "Proficiency" "Cross-Country" "Emergency"})
+(s/def ::difficulty (s/int-in 1 11))
+(s/def ::objective ::non-empty-string)
+(s/def ::mission_description ::non-empty-string)
+(s/def ::why_description ::non-empty-string)
+(s/def ::notes (s/nilable string?))
+(s/def ::route (s/nilable string?))
+(s/def ::pilot_experience (s/nilable string?))
+
+(s/def ::mission-data
+  (s/keys :req-un [::title ::category ::difficulty ::objective
+                   ::mission_description ::why_description]
+          :opt-un [::notes ::route ::pilot_experience]))
+
+;; Utility functions
+(defn- extract-auth-token
+  "Extract bearer token from authorization header"
+  [headers]
+  (when-let [auth-header (or (get headers "authorization")
+                             (get headers "Authorization"))]
+    (when (.startsWith auth-header "Bearer ")
+      (subs auth-header 7))))
+
+(defn- validate-mission-data
+  "Validate mission data against spec"
+  [mission-data]
+  (when-not (s/valid? ::mission-data mission-data)
+    (s/explain-str ::mission-data mission-data)))
+
+(defn- handle-error
+  "Standard error response handler"
+  [status-code error-message & [details]]
+  (log/error error-message details)
+  (-> (response (cond-> {:error error-message}
+                  details (assoc :details details)))
+      (status status-code)))
+
+(defn- handle-success
+  "Standard success response handler"
+  [data & [status-code]]
+  (-> (response data)
+      (status (or status-code 200))))
 
 ;; Admin authentication middleware
 (defn admin-required [handler]
   (fn [request]
-    (let [headers (:headers request)
-          auth-header (or (get headers "authorization")
-                         (get headers "Authorization"))
-          token (when auth-header 
-                  (if (.startsWith auth-header "Bearer ")
-                    (subs auth-header 7)
-                    auth-header))]
-      (if (and token (not (empty? token)) (db/validate-admin-session token))
+    (let [token (extract-auth-token (:headers request))]
+      (if (and token (db/validate-admin-session token))
         (handler request)
-        (-> (response {:error "Admin authentication required"})
-            (status 401))))))
+        (handle-error 401 "Admin authentication required")))))
 
 (defn get-missions [request]
   "Get all missions with filtering and sorting options"
   (try
     (let [params (:params request)
-          category (:category params)
-          difficulty (:difficulty params)
-          pilot-experience (:pilot_experience params)
-          sort-by (:sort params "difficulty")
+          {:keys [category difficulty pilot_experience sort]} params
           missions (db/get-all-missions)
           filtered-missions (cond->> missions
                               category (filter #(= (:category %) category))
                               difficulty (filter #(= (:difficulty %) (Integer/parseInt difficulty)))
-                              pilot-experience (filter #(= (:pilot_experience %) pilot-experience)))]
-      (response {:missions filtered-missions}))
+                              pilot_experience (filter #(= (:pilot_experience %) pilot_experience)))]
+      (log/info "Retrieved" (count filtered-missions) "missions with filters:" params)
+      (handle-success {:missions filtered-missions}))
+    (catch NumberFormatException e
+      (handle-error 400 "Invalid difficulty parameter" (.getMessage e)))
     (catch Exception e
-      (-> (response {:error "Failed to fetch missions" :details (.getMessage e)})
-          (status 500)))))
+      (handle-error 500 "Failed to fetch missions" (.getMessage e)))))
 
 (defn get-mission [id]
   "Get a specific mission by ID"
@@ -55,32 +95,26 @@
   "Create a new mission (admin) or submit for approval (user)"
   (try
     (let [mission-data (:body request)
-          auth-header (get-in request [:headers "authorization"])
-          token (when auth-header (str/replace auth-header #"Bearer " ""))
-          is-admin (and token (db/validate-admin-session token))]
-      (if (and (:title mission-data) 
-               (:category mission-data) 
-               (:difficulty mission-data) 
-               (:objective mission-data)
-               (:mission_description mission-data)
-               (:why_description mission-data))
+          token (extract-auth-token (:headers request))
+          is-admin (and token (db/validate-admin-session token))
+          validation-error (validate-mission-data mission-data)]
+
+      (if validation-error
+        (handle-error 400 "Invalid mission data" validation-error)
         (if is-admin
           ;; Admin can create directly
           (let [new-mission (db/create-mission! mission-data)]
-            (-> (response {:mission new-mission})
-                (status 201)))
+            (log/info "Admin created mission:" (:title mission-data))
+            (handle-success {:mission new-mission} 201))
           ;; Non-admin submits for approval
-          (do
-            (db/create-submission! (assoc mission-data 
-                                          :submitter_name (or (:submitter_name mission-data) "Anonymous")
-                                          :submitter_email (:submitter_email mission-data)))
-            (-> (response {:message "Mission submitted for approval"})
-                (status 201))))
-        (-> (response {:error "Missing required fields"})
-            (status 400))))
+          (let [submission-data (assoc mission-data
+                                       :submitter_name (or (:submitter_name mission-data) "Anonymous")
+                                       :submitter_email (:submitter_email mission-data))]
+            (db/create-submission! submission-data)
+            (log/info "User submitted mission for approval:" (:title mission-data))
+            (handle-success {:message "Mission submitted for approval"} 201)))))
     (catch Exception e
-      (-> (response {:error "Failed to create mission" :details (.getMessage e)})
-          (status 500)))))
+      (handle-error 500 "Failed to create mission" (.getMessage e)))))
 
 (defn update-mission [id request]
   "Update an existing mission (admin) or submit update for approval (user)"

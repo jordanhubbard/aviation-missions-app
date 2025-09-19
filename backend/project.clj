@@ -17,7 +17,9 @@
                  [clj-time "0.15.2"]
                  [ring/ring-defaults "0.4.0"]
                  [metosin/ring-swagger "0.26.2"]
-                 [metosin/compojure-api "2.0.0-alpha31"]]
+                 [metosin/compojure-api "2.0.0-alpha31"]
+                 [org.clojure/tools.logging "1.2.4"]
+                 [ch.qos.logback/logback-classic "1.4.14"]]
   :main ^:skip-aot aviation-missions.core
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[ring/ring-mock "0.4.0"]]}
