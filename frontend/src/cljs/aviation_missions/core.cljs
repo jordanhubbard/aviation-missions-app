@@ -425,9 +425,7 @@
 (defn missions-page []
   [:div.missions-page
    [:div.page-header
-    [:h1 "✈️ Aviation Training Missions"]
-    [:button.btn.btn-primary {:on-click #(swap! app-state assoc :create-dialog-open true)}
-     "Create Mission"]]
+    [:h1 "✈️ Aviation Training Missions"]]
    
   (if (:loading @app-state)
     [:div.loading "Loading missions..."]
@@ -449,6 +447,12 @@
             [mission-card mission])))]
      
      [page-navigation]])
+   
+   ;; Floating Action Button for Create Mission
+   [:button.fab {:on-click #(swap! app-state assoc :create-dialog-open true)
+                 :title "Create New Mission"}
+    [:span.fab-icon "✈️"]
+    [:span.fab-label "Create Mission"]]
    
    [create-mission-dialog]])
 
@@ -587,7 +591,7 @@
           [:button.btn.btn-secondary {:style {:width "100%" :margin-bottom "10px"}}
            "✓ Mark as Completed"]
           [:button.btn.btn-outline {:style {:width "100%"}}
-           "💬 Add Comment"]]]]])])
+           "💬 Add Comment"]]]]])
 
 (defn admin-panel []
   [:div.admin-panel
