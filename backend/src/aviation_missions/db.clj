@@ -13,6 +13,7 @@
 
 (defn init-db! []
   "Initialize the database with required tables"
+  (log/info "🏁 STARTUP PHASE 1: Initializing database...")
   (jdbc/execute! db-spec
     ["CREATE TABLE IF NOT EXISTS missions (
         id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -180,7 +181,7 @@
         expires_at TIMESTAMP NOT NULL
       )"])
   
-  (println "Database initialized successfully"))
+  (log/info "✅ STARTUP PHASE 1 COMPLETE: Database initialized with all tables"))
 
 ;; Mission CRUD operations
 (defn get-all-missions []

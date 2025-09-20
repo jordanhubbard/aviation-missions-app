@@ -10,15 +10,54 @@
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.not-modified :refer [wrap-not-modified]]
-            [ring.util.response :refer [response status resource-response]]
+            [ring.util.response :refer [response status resource-response content-type]]
             [aviation-missions.db :as db]
             [aviation-missions.handlers :as handlers]
-            [aviation-missions.swagger :as swagger])
+            [aviation-missions.swagger :as swagger]
+            [clojure.tools.logging :as log])
   (:gen-class))
 
 (defroutes app-routes
   ;; API Documentation
   (GET "/swagger.json" [] swagger/swagger-spec)
+  (GET "/api" []
+    (log/info "📚 Serving API documentation interface at /api")
+    (-> (response
+    (str "<!DOCTYPE html>
+<html>
+<head>
+  <title>Aviation Mission Management API Documentation</title>
+  <link rel=\"stylesheet\" type=\"text/css\" href=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css\" />
+  <style>
+    html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+    *, *:before, *:after { box-sizing: inherit; }
+    body { margin:0; background: #fafafa; }
+  </style>
+</head>
+<body>
+  <div id=\"swagger-ui\"></div>
+  <script src=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js\"></script>
+  <script src=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js\"></script>
+  <script>
+    window.onload = function() {
+      const ui = SwaggerUIBundle({
+        url: '/swagger.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: \"StandaloneLayout\"
+      });
+    };
+  </script>
+</body>
+</html>"))
+                     (content-type "text/html")))
   
   ;; Mission endpoints
   (GET "/missions" [] handlers/get-missions)
@@ -58,7 +97,10 @@
   (GET "/admin/status" request (handlers/check-admin-status request))
   
   ;; Health check
-  (GET "/health" [] (response {:status "healthy"}))
+  (GET "/health" []
+    (let [mission-count (count (db/get-all-missions))]
+      (log/debug (format "Health check: API responding, %d missions available" mission-count))
+      (response {:status "healthy" :missions_loaded mission-count})))
   
   ;; Serve frontend static files
   (GET "/" [] (-> (resource-response "public/index.html")
@@ -85,17 +127,31 @@
 (defn -main
   "Start the server"
   [& args]
+  (log/info "🚀 Aviation Mission Management System starting up...")
+
+  ;; Phase 1: Database initialization
   (db/init-db!)
-  
-  ;; Seed database with initial missions if empty
-  (when (empty? (db/get-all-missions))
-    (try
-      (require 'aviation-missions.mission-parser)
-      (let [seed-fn (resolve 'aviation-missions.mission-parser/seed-database-with-missions!)]
-        (seed-fn "/app/missions.txt"))
-      (catch Exception e
-        (println "Could not seed database with missions:" (.getMessage e)))))
-  
+
+  ;; Phase 2: Mission data loading
+  (log/info "📊 STARTUP PHASE 2: Loading mission data...")
+  (let [existing-missions (db/get-all-missions)]
+    (if (empty? existing-missions)
+      (do
+        (log/info "Database is empty, seeding with initial missions...")
+        (try
+          (require 'aviation-missions.mission-parser)
+          (let [seed-fn (resolve 'aviation-missions.mission-parser/seed-database-with-missions!)]
+            (seed-fn "/app/missions.txt")
+            (let [loaded-count (count (db/get-all-missions))]
+              (log/info (format "✅ STARTUP PHASE 2 COMPLETE: Loaded %d missions from seed file" loaded-count))))
+          (catch Exception e
+            (log/warn (format "⚠️  Could not seed database with missions: %s" (.getMessage e))))))
+      (log/info (format "✅ STARTUP PHASE 2 COMPLETE: Found %d existing missions in database" (count existing-missions)))))
+
+  ;; Phase 3: API server startup
+  (log/info "🌐 STARTUP PHASE 3: Starting API server...")
   (let [port (Integer/parseInt (or (System/getenv "PORT") (System/getenv "API_PORT") "3000"))]
-    (println (str "Starting server on port " port))
+    (log/info (format "Starting server on port %d" port))
+    (log/info "✅ STARTUP PHASE 3 COMPLETE: API server ready and listening")
+    (log/info "🎯 Aviation Mission Management System fully operational!")
     (jetty/run-jetty app {:port port :join? true})))

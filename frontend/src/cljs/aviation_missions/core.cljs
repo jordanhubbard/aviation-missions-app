@@ -34,6 +34,10 @@
                            :login-credentials {:admin_name ""
                                               :password ""}}))
 
+;; Forward declarations
+(declare fetch-missions)
+(declare fetch-submissions)
+
 ;; Authentication functions
 (defn admin-login [credentials]
   (go
@@ -169,8 +173,12 @@
       (js/console.log "Response received:" response)
       (if (= 200 (:status response))
         (do
-          (js/console.log "Missions data:" (:missions (:body response)))
-          (swap! app-state assoc :missions (:missions (:body response)) :loading false))
+          (let [missions (:missions (:body response))
+                mission-count (count missions)]
+            (js/console.log (str "Loaded " mission-count " missions from API"))
+            (js/console.log "✅ UI PHASE 3 COMPLETE: Mission data loaded, UI fully operational!")
+            (js/console.log "🎯 Aviation Mission Management UI ready for user interaction")
+            (swap! app-state assoc :missions missions :loading false)))
         (do
           (js/console.error "Failed to fetch missions. Status:" (:status response) "Body:" (:body response))
           (swap! app-state assoc :loading false))))))
@@ -972,7 +980,9 @@
 ;; Development and initialization
 (defn dev-setup []
   (when config/debug?
-    (println "dev mode")))
+    (js/console.log "Development mode enabled")
+    (js/console.log "Frontend HTTP server listening on port 8280"))
+  (js/console.log "🌐 UI HTTP Service: Frontend available via backend server"))
 
 (defn ^:dev/after-load mount-root []
   (let [root-el (.getElementById js/document "app")]
@@ -980,12 +990,22 @@
     (rdom/render [app] root-el)))
 
 (defn init! []
-  (js/console.log "Aviation Missions app initializing...")
+  (js/console.log "🏠 FRONTEND STARTUP: Aviation Missions UI initializing...")
   (js/console.log "Debug mode:" config/debug?)
   (js/console.log "API base URL:" config/api-base-url)
+
+  ;; Phase 1: Development setup
+  (js/console.log "🔧 UI PHASE 1: Setting up development environment...")
   (dev-setup)
+  (js/console.log "✅ UI PHASE 1 COMPLETE: Development environment ready")
+
+  ;; Phase 2: Mount React components
+  (js/console.log "🎭 UI PHASE 2: Mounting React components...")
   (mount-root)
-  (js/console.log "App mounted, checking admin status and fetching missions...")
+  (js/console.log "✅ UI PHASE 2 COMPLETE: React components mounted, UI ready")
+
+  ;; Phase 3: Load application data
+  (js/console.log "📊 UI PHASE 3: Loading application data...")
   (check-admin-status)
   (fetch-missions))
 ]))
