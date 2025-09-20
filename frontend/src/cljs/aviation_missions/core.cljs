@@ -499,9 +499,10 @@
 
 (defn create-mission-dialog []
   (let [new-mission (:new-mission @app-state)]
-    [:div.modal {:class (when (:create-dialog-open @app-state) "modal-open")}
-     [:div.modal-backdrop {:on-click #(swap! app-state assoc :create-dialog-open false)}]
-     [:div.modal-content
+    (when (:create-dialog-open @app-state)
+      [:div.modal.modal-open
+       [:div.modal-backdrop {:on-click #(swap! app-state assoc :create-dialog-open false)}]
+       [:div.modal-content
       [:div.modal-header
        [:h2 "Create New Mission"]
        [:button.modal-close {:on-click #(swap! app-state assoc :create-dialog-open false)} "×"]]
@@ -561,7 +562,7 @@
                                                                 (not-empty (:why_description new-mission))
                                                                 (not-empty (:objective new-mission)))
                                                         (create-mission new-mission)))}
-        "Create Mission"]]]
+        "Create Mission"]
 
 (defn missions-page []
   [:div.missions-page

@@ -11,10 +11,13 @@ RUN apk add --no-cache \
     ca-certificates \
     unzip
 
-# Install Leiningen for Clojure builds
-RUN curl -L -o /usr/local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein \
-    && chmod +x /usr/local/bin/lein \
-    && LEIN_ROOT=1 lein version
+# Install Leiningen for Clojure builds with retry logic
+RUN for i in 1 2 3; do \
+        curl -L -o /usr/local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && \
+        chmod +x /usr/local/bin/lein && \
+        LEIN_ROOT=1 lein version && \
+        break || sleep 10; \
+    done
 
 # Note: We'll use built-in Clojure tools for linting instead of external tools
 
@@ -22,16 +25,41 @@ WORKDIR /app
 
 # Frontend build stage  
 FROM base AS frontend-build
-COPY frontend/ ./frontend/
 WORKDIR /app/frontend
+
+# Copy package files first for better caching
+COPY frontend/package*.json ./
+RUN npm ci --only=production
+
+# Copy shadow-cljs config for dependency resolution
+COPY frontend/shadow-cljs.edn ./
+
+# Install shadow-cljs dependencies (this will be cached unless dependencies change)
 RUN npm install
+
+# Copy source code last (changes most frequently)
+COPY frontend/src ./src/
+COPY frontend/resources ./resources/
+
+# Build the frontend
 RUN npm run build
 
 # Linting stage - analyze code quality
 FROM base AS linting
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
 WORKDIR /app
+
+# Copy dependency files first for caching
+COPY backend/project.clj ./backend/
+COPY frontend/package*.json ./frontend/
+COPY frontend/shadow-cljs.edn ./frontend/
+
+# Install dependencies (cached unless dependency files change)
+RUN cd backend && lein deps
+RUN cd frontend && npm install
+
+# Copy source code for analysis
+COPY backend/src ./backend/src/
+COPY frontend/src ./frontend/src/
 
 # Run comprehensive code analysis
 RUN echo "=== RUNNING COMPREHENSIVE CODE ANALYSIS ===" && \
@@ -51,8 +79,6 @@ RUN echo "=== RUNNING SYNTAX CHECK ON BACKEND CODE ===" && \
 # Run syntax checking on frontend code  
 RUN echo "=== RUNNING SYNTAX CHECK ON FRONTEND CODE ===" && \
     cd frontend && \
-    echo "Installing frontend dependencies..." && \
-    npm install && \
     echo "Building frontend code..." && \
     npm run build || echo "Frontend build completed with issues"
 
@@ -66,12 +92,25 @@ RUN echo "=== RUNNING FILE VALIDATION ===" && \
 
 # Backend build stage (after frontend to include static files)
 FROM base AS backend-build
-COPY backend/ ./backend/
+WORKDIR /app/backend
+
+# Copy project.clj first for dependency caching
+COPY backend/project.clj ./
+
+# Download dependencies (this will be cached unless project.clj changes)
+RUN lein deps
+
+# Copy source code
+COPY backend/src ./src/
+COPY backend/resources ./resources/
+
 # Copy frontend static files into backend resources before building
-COPY --from=frontend-build /app/frontend/resources/public ./backend/resources/public/
+COPY --from=frontend-build /app/frontend/resources/public ./resources/public/
+
 # Copy missions data file for database seeding
 COPY missions.txt /app/missions.txt
-WORKDIR /app/backend
+
+# Build the uberjar
 RUN lein uberjar
 
 # Production stage
