@@ -750,7 +750,7 @@
               "✏️ Edit Mission"]
              [:button.btn.btn-danger {:style {:width "100%"}
                                        :on-click #(delete-mission (:id mission))}
-              "🗑️ Delete Mission"]]])
+              "🗑️ Delete Mission"]]])]]])
 
 (defn admin-login-dialog []
   (let [credentials (:login-credentials @app-state)]
