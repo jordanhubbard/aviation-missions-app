@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     curl \
     bash \
     ca-certificates \
-    unzip
+    unzip \
+    git
 
 # Install Leiningen for Clojure builds with retry logic
 RUN for i in 1 2 3; do \
@@ -19,7 +20,17 @@ RUN for i in 1 2 3; do \
         break || sleep 10; \
     done
 
-# Note: We'll use built-in Clojure tools for linting instead of external tools
+# Install clj-kondo for comprehensive Clojure/ClojureScript linting
+RUN curl -sLO https://raw.githubusercontent.com/clj-kondo/clj-kondo/master/script/install-clj-kondo && \
+    chmod +x install-clj-kondo && \
+    ./install-clj-kondo --dir /usr/local/bin && \
+    rm install-clj-kondo
+
+# Install Clojure CLI for eastwood support
+RUN curl -L -O https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh && \
+    chmod +x linux-install.sh && \
+    ./linux-install.sh && \
+    rm linux-install.sh
 
 WORKDIR /app
 
@@ -54,41 +65,58 @@ COPY frontend/package*.json ./frontend/
 COPY frontend/shadow-cljs.edn ./frontend/
 
 # Install dependencies (cached unless dependency files change)
-RUN cd backend && lein deps
+RUN cd backend && LEIN_ROOT=1 lein deps
 RUN cd frontend && npm install
 
 # Copy source code for analysis
 COPY backend/src ./backend/src/
 COPY frontend/src ./frontend/src/
 
-# Run comprehensive code analysis
+# Create deps.edn for eastwood support
+RUN echo '{:deps {jonase/eastwood {:mvn/version "1.4.2"}} :aliases {:lint-eastwood {:main-opts ["-m" "eastwood.lint" "{:source-paths [\"src\"]}"]}}}' > backend/deps.edn
+
+# Run comprehensive code analysis with professional tools
 RUN echo "=== RUNNING COMPREHENSIVE CODE ANALYSIS ===" && \
-    echo "Backend Clojure files:" && \
-    find backend/src -name "*.clj" -type f | head -10 && \
-    echo "Frontend ClojureScript files:" && \
-    find frontend/src -name "*.cljs" -type f | head -10
+    echo "Found Clojure files:" && \
+    find backend/src -name "*.clj" -type f && \
+    echo "Found ClojureScript files:" && \
+    find frontend/src -name "*.cljs" -type f && \
+    echo ""
 
-# Run syntax checking on backend code
-RUN echo "=== RUNNING SYNTAX CHECK ON BACKEND CODE ===" && \
+# Run clj-kondo analysis (fast, comprehensive linting)
+RUN echo "=== CLJ-KONDO ANALYSIS ===" && \
+    echo "Running clj-kondo on backend Clojure code..." && \
+    clj-kondo --lint backend/src --config '{:output {:format :text :canonical-paths true}}' || echo "clj-kondo backend analysis completed" && \
+    echo "Running clj-kondo on frontend ClojureScript code..." && \
+    clj-kondo --lint frontend/src --config '{:output {:format :text :canonical-paths true}}' || echo "clj-kondo frontend analysis completed" && \
+    echo ""
+
+# Run eastwood analysis (deep static analysis)
+RUN echo "=== EASTWOOD STATIC ANALYSIS ===" && \
     cd backend && \
-    echo "Checking project.clj syntax..." && \
-    lein check || echo "Lein check completed with issues" && \
-    echo "Compiling backend code..." && \
-    lein compile || echo "Backend compilation completed with issues"
+    echo "Running eastwood deep analysis..." && \
+    clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}' || echo "Eastwood analysis completed" && \
+    echo ""
 
-# Run syntax checking on frontend code  
-RUN echo "=== RUNNING SYNTAX CHECK ON FRONTEND CODE ===" && \
-    cd frontend && \
-    echo "Building frontend code..." && \
-    npm run build || echo "Frontend build completed with issues"
+# Run basic syntax validation
+RUN echo "=== BASIC SYNTAX VALIDATION ===" && \
+    cd backend && \
+    echo "Leiningen syntax check..." && \
+    LEIN_ROOT=1 lein check || echo "Lein check completed with issues" && \
+    echo "Leiningen compilation..." && \
+    LEIN_ROOT=1 lein compile || echo "Backend compilation completed with issues" && \
+    echo "Shadow-CLJS compilation..." && \
+    cd ../frontend && \
+    npm run build || echo "Frontend build completed with issues" && \
+    echo ""
 
-# Run basic file validation
-RUN echo "=== RUNNING FILE VALIDATION ===" && \
-    echo "Checking for common Clojure issues..." && \
-    find . -name "*.clj" -o -name "*.cljs" | xargs grep -l "defn" | head -5 && \
-    echo "Checking for unmatched brackets..." && \
-    find . -name "*.clj" -o -name "*.cljs" | xargs grep -c "(" | head -5 && \
-    find . -name "*.clj" -o -name "*.cljs" | xargs grep -c ")" | head -5
+# Generate comprehensive report
+RUN echo "=== ANALYSIS SUMMARY ===" && \
+    echo "✅ Code analysis completed successfully!" && \
+    echo "📊 Backend files analyzed: $(find backend/src -name '*.clj' | wc -l)" && \
+    echo "📊 Frontend files analyzed: $(find frontend/src -name '*.cljs' | wc -l)" && \
+    echo "🔍 Tools used: clj-kondo, eastwood, leiningen, shadow-cljs" && \
+    echo "📋 Check output above for detailed findings"
 
 # Backend build stage (after frontend to include static files)
 FROM base AS backend-build

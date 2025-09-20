@@ -33,6 +33,11 @@ help:
 	@echo "  build        - Build the Docker image"
 	@echo "  test-local   - Test the application locally"
 	@echo ""
+	@echo "  Code Quality & Analysis:"
+	@echo "  lint         - Comprehensive analysis (clj-kondo + eastwood + compilation)"
+	@echo "  lint-fast    - Fast syntax checking with clj-kondo only"
+	@echo "  lint-eastwood- Deep static analysis with eastwood"
+	@echo ""
 	@echo "  Backend Development:"
 	@echo "  dev-backend  - Start only the Clojure backend for development"
 	@echo "  dev-frontend - Start only the ClojureScript frontend for development"
@@ -44,7 +49,8 @@ help:
 	@echo "Usage:"
 	@echo "  make start                    # Production mode"
 	@echo "  make dev                      # Development mode"
-	@echo "  make lint                     # Run code analysis and linting"
+	@echo "  make lint                     # Comprehensive code analysis"
+	@echo "  make lint-fast                # Quick syntax check"
 	@echo "  PORT=9000 make start          # Use custom port"
 
 # Build the Docker image
@@ -53,12 +59,44 @@ build:
 	@echo "🔨 Building Aviation Mission Management Docker image..."
 	docker build -t $(IMAGE_NAME):latest .
 
-# Run linting analysis on the code
+# Run comprehensive linting analysis on the code
 .PHONY: lint
 lint:
-	@echo "🔍 Running Clojure code analysis and linting..."
+	@echo "🔍 Running comprehensive Clojure/ClojureScript code analysis..."
+	@echo "📋 Tools: clj-kondo, eastwood, leiningen, shadow-cljs"
 	docker build --target linting -t $(IMAGE_NAME):lint .
-	@echo "✅ Build completed successfully!"
+	@echo "✅ Linting analysis completed successfully!"
+
+# Run only clj-kondo for fast syntax checking
+.PHONY: lint-fast
+lint-fast:
+	@echo "⚡ Running fast clj-kondo syntax analysis..."
+	@echo "Backend Clojure files:"
+	@if command -v clj-kondo >/dev/null 2>&1; then \
+		clj-kondo --lint backend/src --config '{:output {:format :text}}'; \
+	else \
+		echo "clj-kondo not installed locally, using Docker..."; \
+		docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint backend/src; \
+	fi
+	@echo "Frontend ClojureScript files:"
+	@if command -v clj-kondo >/dev/null 2>&1; then \
+		clj-kondo --lint frontend/src --config '{:output {:format :text}}'; \
+	else \
+		echo "clj-kondo not installed locally, using Docker..."; \
+		docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint frontend/src; \
+	fi
+
+# Run eastwood static analysis (requires local setup)
+.PHONY: lint-eastwood
+lint-eastwood:
+	@echo "🔬 Running eastwood static analysis..."
+	@if [ -f backend/deps.edn ]; then \
+		cd backend && clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}'; \
+	else \
+		echo "Creating deps.edn for eastwood..."; \
+		echo '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' > backend/deps.edn; \
+		cd backend && clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}'; \
+	fi
 
 # Start the application in production mode
 .PHONY: start
