@@ -735,22 +735,7 @@
           [:button.btn.btn-secondary {:style {:width "100%" :margin-bottom "10px"}}
            "✓ Mark as Completed"]
           [:button.btn.btn-outline {:style {:width "100%"}}
-           "💬 Add Comment"]
-
-          ;; Admin-only actions
-          (when (:admin-authenticated @app-state)
-            [:div
-             [:hr {:style {:margin "10px 0"}}]
-             [:button.btn.btn-warning {:style {:width "100%" :margin-bottom "10px"}
-                                       :on-click #(do
-                                                    (swap! app-state assoc
-                                                           :edit-mission-id (:id mission)
-                                                           :edit-mission-data mission
-                                                           :edit-dialog-open true))}
-              "✏️ Edit Mission"]
-             [:button.btn.btn-danger {:style {:width "100%"}
-                                       :on-click #(delete-mission (:id mission))}
-              "🗑️ Delete Mission"]]])]]])
+           "💬 Add Comment"]]]]])
 
 (defn admin-login-dialog []
   (let [credentials (:login-credentials @app-state)]
