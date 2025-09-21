@@ -86,6 +86,24 @@
           (js/alert "Admin login successful!"))
         (js/alert "Invalid credentials")))))
 
+;; Mission field configuration - schema-driven UI
+(def mission-field-config
+  "Configuration for mission fields with display properties"
+  [{:key :objective :label "OBJECTIVE" :color "#2e7d32" :required true}
+   {:key :route :label "ROUTE" :color "#1565c0" :required false}
+   {:key :suggested_route :label "SUGGESTED ROUTE" :color "#7b1fa2" :required false}
+   {:key :notes :label "NOTES" :color "#ef6c00" :required false}
+   {:key :special_challenges :label "SPECIAL CHALLENGES" :color "#c62828" :required false}])
+
+(defn render-mission-field [mission field-config]
+  "Render a mission field only if it has content"
+  (let [{:keys [key label color required]} field-config
+        value (get mission key)]
+    (when (and value (not (str/blank? (str value))))
+      [:div.mission-field {:key (name key)}
+       [:span.mission-data-label {:style {:color color :font-weight "bold"}} (str label ":")]
+       [:span.mission-data-value {:style {:color "#333" :margin-left "8px"}} value]])))
+
 ;; UI Components
 (defn mission-card [mission]
   (let [challenges (analyze-mission-challenges mission)
@@ -100,35 +118,39 @@
        [:span.experience-badge (str "EXP: " (:pilot_experience mission))]]]
      
      [:div.mission-content
+      ;; Schema-driven field rendering - only shows fields that exist
       [:div.mission-data-grid
-       [:span.mission-data-label {:style {:background-color "#e8f5e8" :padding "2px 4px" :border-radius "3px"}} "OBJECTIVE:"]
-       [:span.mission-data-value {:style {:background-color "#f0f8ff" :padding "2px 4px" :border-radius "3px"}} (:objective mission)]
-       
-       [:span.mission-data-label {:style {:background-color "#fff3e0" :padding "2px 4px" :border-radius "3px"}} "AIRPORT:"]
-       [:span.mission-data-value {:style {:background-color "#f5f5dc" :padding "2px 4px" :border-radius "3px"}} (:airport mission)]
-       
-       [:span.mission-data-label {:style {:background-color "#fce4ec" :padding "2px 4px" :border-radius "3px"}} "AIRCRAFT:"]
-       [:span.mission-data-value {:style {:background-color "#f3e5f5" :padding "2px 4px" :border-radius "3px"}} (:aircraft mission)]
-       
-       [:span.mission-data-label {:style {:background-color "#e0f2f1" :padding "2px 4px" :border-radius "3px"}} "WEATHER:"]
-       [:span.mission-data-value {:style {:background-color "#e8f5e8" :padding "2px 4px" :border-radius "3px"}} (:weather mission)]]
+       (for [field-config mission-field-config]
+         ^{:key (:key field-config)}
+         [render-mission-field mission field-config])]
       
+      ;; Mission description section
       [:div.mission-section
-       [:h4 {:style {:background-color "#e3f2fd" :padding "4px 8px" :border-radius "3px" :margin "8px 0 4px 0"}} "DESCRIPTION"]
-       [:p {:style {:background-color "#fafafa" :padding "6px" :border-radius "3px" :border-left "3px solid #2196f3"}} (:description mission)]]
+       [:h4 {:style {:color "#1976d2" :margin "12px 0 6px 0" :font-size "0.85rem"}} "DESCRIPTION"]
+       [:p {:style {:color "#424242" :line-height "1.4" :margin "0" :border-left "3px solid #1976d2" :padding-left "8px"}} 
+        (:mission_description mission)]]
       
+      ;; Why section
+      (when (:why_description mission)
+        [:div.mission-section
+         [:h4 {:style {:color "#388e3c" :margin "12px 0 6px 0" :font-size "0.85rem"}} "WHY THIS MISSION"]
+         [:p {:style {:color "#424242" :line-height "1.4" :margin "0" :border-left "3px solid #388e3c" :padding-left "8px"}} 
+          (:why_description mission)]])
+      
+      ;; Flight challenges
       (when (seq challenges)
         [:div.challenges-section
-         [:h4 {:style {:background-color "#fff8e1" :padding "4px 8px" :border-radius "3px" :margin "8px 0 4px 0"}} "FLIGHT CHALLENGES"]
+         [:h4 {:style {:color "#f57c00" :margin "12px 0 6px 0" :font-size "0.85rem"}} "FLIGHT CHALLENGES"]
          [:div.challenges-grid
           (for [challenge challenges]
             ^{:key (:label challenge)}
-            [:div.challenge-item {:style {:background-color "#fff3cd" :border "1px solid #ffeaa7"}}
+            [:div.challenge-item {:style {:background-color "#fff8e1" :border "1px solid #ffcc02" :color "#e65100"}}
              [:span.challenge-icon (:icon challenge)]
              [:span.challenge-label (:label challenge)]])]])]
      
      [:div.mission-footer
-      [:div.pilot-experience (str "PILOT LEVEL: " (:pilot_experience mission))]
+      [:div.pilot-experience {:style {:color "#5d4037" :font-weight "bold"}} 
+       (str "PILOT LEVEL: " (:pilot_experience mission))]
       [:div.mission-actions
        [:button.btn-mission.primary "📋 BRIEF"]
        [:button.btn-mission "✅ COMPLETE"]

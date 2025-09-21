@@ -21,6 +21,11 @@ This document defines the complete data structure for aviation training missions
 | `pilot_experience` | `VARCHAR(50)` | ❌ | Target pilot experience level | `"Intermediate (100-500 hours)"` |
 | `special_challenges` | `TEXT` | ❌ | Special challenges or requirements | `"Mountain Flying, High Altitude"` |
 
+### Fields NOT in Database (UI should not display these)
+- `aircraft` - Not stored in missions data
+- `airport` - Not stored as separate field (included in route/description)
+- `weather` - Not stored as separate field (included in description/notes)
+
 ### Computed/Aggregated Fields (API Response Only)
 
 | Field | Type | Description | Example |
