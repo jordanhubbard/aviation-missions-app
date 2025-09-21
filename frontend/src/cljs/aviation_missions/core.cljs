@@ -15,6 +15,10 @@
                            :login-dialog-open false
                            :create-dialog-open false
                            :mission-details nil
+                           :mission-brief-open false
+                           :mission-rate-open false
+                           :selected-mission nil
+                           :user-rating 0
                            :login-credentials {:username "" :password ""}}))
 
 ;; Utility functions
@@ -86,6 +90,26 @@
           (js/alert "Admin login successful!"))
         (js/alert "Invalid credentials")))))
 
+(defn complete-mission [mission-id]
+  (go
+    (let [response (<! (http/post (str config/api-base-url "/missions/" mission-id "/complete")))]
+      (if (= 200 (:status response))
+        (do
+          (js/alert "Mission completed successfully!")
+          (fetch-missions)) ; Refresh missions list
+        (js/alert "Failed to complete mission")))))
+
+(defn rate-mission [mission-id rating]
+  (go
+    (let [response (<! (http/post (str config/api-base-url "/missions/" mission-id "/rate")
+                                  {:json-params {:rating rating}}))]
+      (if (= 200 (:status response))
+        (do
+          (js/alert "Mission rated successfully!")
+          (swap! app-state assoc :mission-rate-open false :user-rating 0)
+          (fetch-missions)) ; Refresh missions list
+        (js/alert "Failed to rate mission")))))
+
 ;; Mission field configuration - schema-driven UI with dark theme colors
 (def mission-field-config
   "Configuration for mission fields with display properties - dark theme"
@@ -153,9 +177,18 @@
       [:div.pilot-experience {:style {:color "#ba68c8" :font-weight "bold" :font-size "0.85rem"}} 
        (str "PILOT LEVEL: " (:pilot_experience mission))]
       [:div.mission-actions {:style {:display "flex" :gap "8px"}}
-       [:button.btn-mission.primary {:style {:background-color "#64b5f6" :color "#000" :border "none" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}} "📋 BRIEF"]
-       [:button.btn-mission {:style {:background-color "#424242" :color "#81c784" :border "1px solid #666" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}} "✅ COMPLETE"]
-       [:button.btn-mission {:style {:background-color "#424242" :color "#ffb74d" :border "1px solid #666" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}} "⭐ RATE"]]]]))
+       [:button.btn-mission.primary 
+        {:style {:background-color "#64b5f6" :color "#000" :border "none" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+         :on-click #(do (swap! app-state assoc :selected-mission mission :mission-brief-open true))} 
+        "📋 BRIEF"]
+       [:button.btn-mission 
+        {:style {:background-color "#424242" :color "#81c784" :border "1px solid #666" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+         :on-click #(complete-mission (:id mission))} 
+        "✅ COMPLETE"]
+       [:button.btn-mission 
+        {:style {:background-color "#424242" :color "#ffb74d" :border "1px solid #666" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+         :on-click #(do (swap! app-state assoc :selected-mission mission :mission-rate-open true :user-rating 0))} 
+        "⭐ RATE"]]]]))
 
 (defn admin-login-dialog []
   [:div.modal {:class (when (:login-dialog-open @app-state) "modal-open")}
@@ -191,6 +224,75 @@
     [:div.modal-footer
      [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :create-dialog-open false)} "Cancel"]
      [:button.btn.btn-primary "Create Mission"]]]])
+
+(defn mission-brief-dialog []
+  (let [mission (:selected-mission @app-state)]
+    [:div.modal {:class (when (:mission-brief-open @app-state) "modal-open")}
+     [:div.modal-backdrop {:on-click #(swap! app-state assoc :mission-brief-open false)}]
+     [:div.modal-content {:style {:max-width "800px" :background-color "#2d2d2d" :color "#e0e0e0"}}
+      [:div.modal-header {:style {:background-color "#3d3d3d" :border-bottom "1px solid #555"}}
+       [:h2 {:style {:color "#ffffff"}} (str "📋 Mission Brief: " (:title mission))]
+       [:button.modal-close {:style {:color "#ffffff"} :on-click #(swap! app-state assoc :mission-brief-open false)} "×"]]
+      [:div.modal-body {:style {:padding "20px"}}
+       [:div.brief-section
+        [:h3 {:style {:color "#64b5f6" :margin-bottom "10px"}} "Mission Overview"]
+        [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
+         [:p {:style {:margin "0 0 10px 0"}} [:strong {:style {:color "#81c784"}} "Objective: "] (:objective mission)]
+         [:p {:style {:margin "0 0 10px 0"}} [:strong {:style {:color "#ffb74d"}} "Difficulty: "] (str (:difficulty mission) "/10")]
+         [:p {:style {:margin "0"}} [:strong {:style {:color "#ba68c8"}} "Experience Level: "] (:pilot_experience mission)]]]
+       
+       [:div.brief-section
+        [:h3 {:style {:color "#81c784" :margin-bottom "10px"}} "Mission Description"]
+        [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
+         [:p {:style {:margin "0" :line-height "1.5"}} (:mission_description mission)]]]
+       
+       (when (:why_description mission)
+         [:div.brief-section
+          [:h3 {:style {:color "#ffb74d" :margin-bottom "10px"}} "Why This Mission"]
+          [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
+           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]])
+       
+       (when (:route mission)
+         [:div.brief-section
+          [:h3 {:style {:color "#e57373" :margin-bottom "10px"}} "Route Information"]
+          [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
+           [:p {:style {:margin "0 0 10px 0"}} [:strong "Route: "] (:route mission)]
+           (when (:suggested_route mission)
+             [:p {:style {:margin "0"}} [:strong "Suggested Route: "] (:suggested_route mission)])]])
+       
+       (when (:notes mission)
+         [:div.brief-section
+          [:h3 {:style {:color "#ba68c8" :margin-bottom "10px"}} "Additional Notes"]
+          [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px"}}
+           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]])]
+      
+      [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
+       [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-brief-open false)} "Close Brief"]
+       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]]]))
+
+(defn mission-rate-dialog []
+  (let [mission (:selected-mission @app-state)
+        current-rating (:user-rating @app-state)]
+    [:div.modal {:class (when (:mission-rate-open @app-state) "modal-open")}
+     [:div.modal-backdrop {:on-click #(swap! app-state assoc :mission-rate-open false)}]
+     [:div.modal-content {:style {:background-color "#2d2d2d" :color "#e0e0e0"}}
+      [:div.modal-header {:style {:background-color "#3d3d3d" :border-bottom "1px solid #555"}}
+       [:h2 {:style {:color "#ffffff"}} (str "⭐ Rate Mission: " (:title mission))]
+       [:button.modal-close {:style {:color "#ffffff"} :on-click #(swap! app-state assoc :mission-rate-open false)} "×"]]
+      [:div.modal-body {:style {:padding "20px" :text-align "center"}}
+       [:p {:style {:margin-bottom "20px"}} "How would you rate this mission?"]
+       [:div.rating-stars {:style {:margin "20px 0"}}
+        (for [i (range 1 6)]
+          ^{:key i}
+          [:button.star-button 
+           {:style {:background "none" :border "none" :font-size "2rem" :margin "0 5px" :cursor "pointer"
+                    :color (if (<= i current-rating) "#ffb74d" "#666")}
+            :on-click #(swap! app-state assoc :user-rating i)}
+           "⭐"])]
+       [:p {:style {:color "#999" :font-size "0.9rem"}} (str "Selected rating: " current-rating "/5")]]
+      [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
+       [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-rate-open false :user-rating 0)} "Cancel"]
+       [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]]]))
 
 (defn navigation []
   [:header.app-header {:style {:background-color "#1e1e1e" :border-bottom "2px solid #333" :padding "16px 0"}}
@@ -233,6 +335,8 @@
     [missions-page]]
    [admin-login-dialog]
    [create-mission-dialog]
+   [mission-brief-dialog]
+   [mission-rate-dialog]
    [floating-action-button]])
 
 ;; Initialization
