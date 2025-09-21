@@ -96,13 +96,13 @@
    {:key :special_challenges :label "SPECIAL CHALLENGES" :color "#c62828" :required false}])
 
 (defn render-mission-field [mission field-config]
-  "Render a mission field only if it has content"
+  "Render a mission field only if it has content as a table row"
   (let [{:keys [key label color required]} field-config
         value (get mission key)]
     (when (and value (not (str/blank? (str value))))
-      [:div.mission-field {:key (name key)}
-       [:span.mission-data-label {:style {:color color :font-weight "bold"}} (str label ":")]
-       [:span.mission-data-value {:style {:color "#333" :margin-left "8px"}} value]])))
+      [:tr.mission-field {:key (name key)}
+       [:td.mission-data-label {:style {:color color :font-weight "bold" :padding "2px 8px 2px 0" :vertical-align "top" :white-space "nowrap"}} (str label ":")]
+       [:td.mission-data-value {:style {:color "#333" :padding "2px 0" :word-wrap "break-word"}} value]])))
 
 ;; UI Components
 (defn mission-card [mission]
@@ -119,10 +119,11 @@
      
      [:div.mission-content
       ;; Schema-driven field rendering - only shows fields that exist
-      [:div.mission-data-grid
-       (for [field-config mission-field-config]
-         ^{:key (:key field-config)}
-         [render-mission-field mission field-config])]
+      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0"}}
+       [:tbody
+        (for [field-config mission-field-config]
+          ^{:key (:key field-config)}
+          [render-mission-field mission field-config])]]
       
       ;; Mission description section
       [:div.mission-section
