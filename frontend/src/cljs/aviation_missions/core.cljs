@@ -247,14 +247,14 @@
     (when (and value (not (str/blank? (str value))))
       [:tr.mission-field {:key (name key)}
        [:td.mission-data-label {:style {:color color :font-weight "bold" :padding "6px 8px 6px 8px" :vertical-align "top" :white-space "nowrap"}} (str label ":")]
-       [:td.mission-data-value {:style {:color "#e0e0e0" :padding "6px 8px" :word-wrap "break-word"}} value]])))
+       [:td.mission-data-value {:style {:color "#ffffff" :padding "6px 8px" :word-wrap "break-word"}} value]])))
 
 ;; UI Components
 (defn mission-card [mission]
   (let [challenges (analyze-mission-challenges mission)
         difficulty (:difficulty mission)]
-    [:div.mission-card {:style {:background-color "#2d2d2d" :border "1px solid #555" :border-radius "8px" :color "#e0e0e0"}}
-     [:div.mission-header {:style {:background-color "#3d3d3d" :padding "12px" :border-radius "8px 8px 0 0" :border-bottom "1px solid #555"}}
+    [:div.mission-card {:style {:background-color "#2d2d2d" :border "1px solid #000" :border-radius "8px" :color "#e0e0e0"}}
+     [:div.mission-header {:style {:background-color "#3d3d3d" :padding "12px" :border-radius "8px 8px 0 0" :border-bottom "1px solid #000"}}
       [:div.mission-title {:style {:color "#ffffff" :font-size "1.1rem" :font-weight "bold" :margin-bottom "8px"}} (:title mission)]
       [:div.mission-meta {:style {:display "flex" :gap "8px" :flex-wrap "wrap"}}
        [:span.category-badge {:style {:background-color "#424242" :color "#81c784" :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}} (:category mission)]
@@ -264,7 +264,7 @@
      
      [:div.mission-content {:style {:padding "12px"}}
       ;; Schema-driven field rendering - only shows fields that exist
-      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0" :background-color "#333" :border-radius "4px"}}
+      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0" :background-color "#1a1a1a" :border "1px solid #000" :border-radius "4px"}}
        [:tbody
         (for [field-config mission-field-config]
           ^{:key (:key field-config)}
@@ -273,14 +273,14 @@
       ;; Mission description section
       [:div.mission-section
        [:h4 {:style {:color "#64b5f6" :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "DESCRIPTION"]
-       [:p {:style {:color "#e0e0e0" :line-height "1.4" :margin "0" :border-left "3px solid #64b5f6" :padding "8px" :border-radius "4px" :background-color "#333"}} 
+       [:p {:style {:color "#ffffff" :line-height "1.4" :margin "0" :border-left "3px solid #64b5f6" :padding "8px" :border-radius "4px" :background-color "#1a1a1a" :border "1px solid #000"}} 
         (:mission_description mission)]]
       
       ;; Why section
       (when (:why_description mission)
         [:div.mission-section
          [:h4 {:style {:color "#81c784" :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "WHY THIS MISSION"]
-         [:p {:style {:color "#e0e0e0" :line-height "1.4" :margin "0" :border-left "3px solid #81c784" :padding "8px" :border-radius "4px" :background-color "#333"}} 
+         [:p {:style {:color "#ffffff" :line-height "1.4" :margin "0" :border-left "3px solid #81c784" :padding "8px" :border-radius "4px" :background-color "#1a1a1a" :border "1px solid #000"}} 
           (:why_description mission)]])
       
       ;; Flight challenges
@@ -290,11 +290,11 @@
          [:div.challenges-grid {:style {:display "flex" :flex-wrap "wrap" :gap "8px" :margin-top "8px"}}
           (for [challenge challenges]
             ^{:key (:label challenge)}
-            [:div.challenge-item {:style {:background-color "#424242" :border "1px solid #666" :color "#ffb74d" :padding "6px 10px" :border-radius "4px" :display "flex" :align-items "center" :gap "6px"}}
+            [:div.challenge-item {:style {:background-color "#424242" :border "1px solid #000" :color "#ffb74d" :padding "6px 10px" :border-radius "4px" :display "flex" :align-items "center" :gap "6px"}}
              [:span.challenge-icon (:icon challenge)]
              [:span.challenge-label (:label challenge)]])]])]
      
-     [:div.mission-footer {:style {:background-color "#3d3d3d" :padding "12px" :border-radius "0 0 8px 8px" :border-top "1px solid #555" :display "flex" :justify-content "space-between" :align-items "center"}}
+     [:div.mission-footer {:style {:background-color "#3d3d3d" :padding "12px" :border-radius "0 0 8px 8px" :border-top "1px solid #000" :display "flex" :justify-content "space-between" :align-items "center"}}
       [:div.pilot-experience {:style {:color "#ba68c8" :font-weight "bold" :font-size "0.85rem"}} 
        (str "PILOT LEVEL: " (:pilot_experience mission))]
       [:div.mission-actions {:style {:display "flex" :gap "8px"}}
