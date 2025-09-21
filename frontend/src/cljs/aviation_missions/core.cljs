@@ -419,8 +419,11 @@
      [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
       (if (:admin? @app-state)
         [:span {:style {:color "#81c784" :font-weight "bold" :background-color "#2d2d2d" :padding "8px 12px" :border-radius "4px" :border "1px solid #555"}} "👨‍💼 ADMIN MODE"]
-        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#64b5f6" :border "1px solid #666" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :login-dialog-open true)} 
-         "🔐 Admin Login"])]]]])
+        [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
+         [:button.btn.btn-primary {:style {:background-color "#81c784" :color "#000" :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(js/alert "Submit Mission functionality coming soon!")} 
+          "📝 Submit Mission"]
+         [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#64b5f6" :border "1px solid #666" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :login-dialog-open true)} 
+          "🔐 Admin Login"]])]]]])
 
 (defn missions-page []
   [:div.missions-page {:style {:background-color "#1a1a1a" :min-height "100vh" :padding "20px 0"}}
