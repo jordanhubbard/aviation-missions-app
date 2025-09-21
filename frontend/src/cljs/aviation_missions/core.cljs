@@ -10,6 +10,7 @@
 ;; Global state
 (defonce app-state (r/atom {:current-page :missions
                            :missions []
+                           :filtered-missions []
                            :loading false
                            :admin? false
                            :login-dialog-open false
@@ -19,7 +20,38 @@
                            :mission-rate-open false
                            :selected-mission nil
                            :user-rating 0
-                           :login-credentials {:username "" :password ""}}))
+                           :login-credentials {:username "" :password ""}
+                           :filters {:category "All Categories"
+                                    :difficulty "All Difficulties"
+                                    :experience "All Experience Levels"
+                                    :search-text ""}}))
+
+;; Filter options
+(def category-options
+  ["All Categories"
+   "Airspace Operations"
+   "Terrain & Environment"
+   "Weather & Atmospheric"
+   "Navigation & Diversions"
+   "Airport Operations"
+   "Endurance & Planning"
+   "Advanced Adventures"
+   "General Training"])
+
+(def difficulty-options
+  ["All Difficulties"
+   "1-2 (Beginner)"
+   "3-4 (Easy)"
+   "5-6 (Moderate)"
+   "7-8 (Hard)"
+   "9-10 (Expert)"])
+
+(def experience-options
+  ["All Experience Levels"
+   "Beginner (< 100 hours)"
+   "Intermediate (100-500 hours)"
+   "Advanced (500+ hours)"
+   "Commercial/ATP"])
 
 ;; Utility functions
 (defn get-difficulty-class [difficulty]
@@ -28,6 +60,45 @@
     (<= difficulty 3) "badge-difficulty-2"
     (<= difficulty 5) "badge-difficulty-3"
     :else "badge-difficulty-6"))
+
+(defn matches-difficulty-filter [mission difficulty-filter]
+  (case difficulty-filter
+    "All Difficulties" true
+    "1-2 (Beginner)" (<= (:difficulty mission) 2)
+    "3-4 (Easy)" (<= 3 (:difficulty mission) 4)
+    "5-6 (Moderate)" (<= 5 (:difficulty mission) 6)
+    "7-8 (Hard)" (<= 7 (:difficulty mission) 8)
+    "9-10 (Expert)" (<= 9 (:difficulty mission) 10)
+    true))
+
+(defn matches-search-text [mission search-text]
+  (if (str/blank? search-text)
+    true
+    (let [search-lower (str/lower-case search-text)
+          searchable-text (str/lower-case 
+                          (str (:title mission) " "
+                               (:objective mission) " "
+                               (:mission_description mission) " "
+                               (:notes mission) " "
+                               (:route mission) " "
+                               (:suggested_route mission)))]
+      (str/includes? searchable-text search-lower))))
+
+(defn filter-missions [missions filters]
+  (let [{:keys [category difficulty experience search-text]} filters]
+    (->> missions
+         (filter #(or (= category "All Categories")
+                      (= (:category %) category)))
+         (filter #(matches-difficulty-filter % difficulty))
+         (filter #(or (= experience "All Experience Levels")
+                      (= (:pilot_experience %) experience)))
+         (filter #(matches-search-text % search-text)))))
+
+(defn update-filtered-missions []
+  (let [missions (:missions @app-state)
+        filters (:filters @app-state)
+        filtered (filter-missions missions filters)]
+    (swap! app-state assoc :filtered-missions filtered)))
 
 (defn analyze-mission-challenges [mission]
   "Analyze mission content to identify flight challenges"
@@ -69,7 +140,8 @@
       (if (= 200 (:status response))
         (do
           (js/console.log "Missions loaded successfully")
-          (swap! app-state assoc :missions (:missions (:body response)) :loading false))
+          (swap! app-state assoc :missions (:missions (:body response)) :loading false)
+          (update-filtered-missions))
         (do
           (js/console.error "Failed to fetch missions")
           (swap! app-state assoc :loading false))))))
@@ -294,6 +366,51 @@
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-rate-open false :user-rating 0)} "Cancel"]
        [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]]]))
 
+(defn filter-dropdown [label options current-value filter-key]
+  [:div.filter-dropdown {:style {:display "flex" :flex-direction "column" :gap "4px"}}
+   [:label {:style {:color "#e0e0e0" :font-size "0.8rem" :font-weight "bold"}} label]
+   [:select {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666" :padding "6px 8px" :border-radius "4px" :font-size "0.85rem" :cursor "pointer"}
+             :value current-value
+             :on-change #(do
+                          (swap! app-state assoc-in [:filters filter-key] (.. % -target -value))
+                          (update-filtered-missions))}
+    (for [option options]
+      ^{:key option}
+      [:option {:value option} option])]])
+
+(defn search-input []
+  [:div.search-input {:style {:display "flex" :flex-direction "column" :gap "4px"}}
+   [:label {:style {:color "#e0e0e0" :font-size "0.8rem" :font-weight "bold"}} "Search Missions"]
+   [:input {:type "text"
+            :placeholder "Search by title, objective, description..."
+            :style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666" :padding "6px 8px" :border-radius "4px" :font-size "0.85rem"}
+            :value (get-in @app-state [:filters :search-text])
+            :on-change #(do
+                         (swap! app-state assoc-in [:filters :search-text] (.. % -target -value))
+                         (update-filtered-missions))}]])
+
+(defn mission-filters []
+  (let [filters (:filters @app-state)]
+    [:div.mission-filters {:style {:background-color "#2d2d2d" :border "1px solid #555" :border-radius "8px" :padding "16px" :margin-bottom "20px"}}
+     [:div.filters-header {:style {:margin-bottom "12px"}}
+      [:h3 {:style {:color "#ffffff" :margin "0" :font-size "1rem" :font-weight "bold"}} "🔍 Filter Missions"]]
+     [:div.filters-grid {:style {:display "grid" :grid-template-columns "repeat(auto-fit, minmax(200px, 1fr))" :gap "16px" :align-items "end"}}
+      [filter-dropdown "Category" category-options (:category filters) :category]
+      [filter-dropdown "Difficulty" difficulty-options (:difficulty filters) :difficulty]
+      [filter-dropdown "Experience Level" experience-options (:experience filters) :experience]
+      [search-input]]
+     [:div.filter-summary {:style {:margin-top "12px" :padding-top "12px" :border-top "1px solid #555" :display "flex" :justify-content "space-between" :align-items "center"}}
+      [:span {:style {:color "#81c784" :font-size "0.85rem" :font-weight "bold"}}
+       (str "Showing " (count (:filtered-missions @app-state)) " of " (count (:missions @app-state)) " missions")]
+      [:button {:style {:background-color "#424242" :color "#ffb74d" :border "1px solid #666" :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :cursor "pointer"}
+                :on-click #(do
+                            (swap! app-state assoc :filters {:category "All Categories"
+                                                             :difficulty "All Difficulties"
+                                                             :experience "All Experience Levels"
+                                                             :search-text ""})
+                            (update-filtered-missions))}
+       "Clear Filters"]]]))
+
 (defn navigation []
   [:header.app-header {:style {:background-color "#1e1e1e" :border-bottom "2px solid #333" :padding "16px 0"}}
    [:div.container {:style {:max-width "1200px" :margin "0 auto" :padding "0 20px"}}
@@ -315,12 +432,20 @@
         [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000" :border "none" :padding "10px 20px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :create-dialog-open true)} 
          "➕ Create Mission"]])]
 
+    [mission-filters]
+
     (if (:loading @app-state)
       [:div.loading {:style {:color "#e0e0e0" :text-align "center" :padding "40px" :font-size "1.2rem"}} "🔄 Loading missions..."]
-      [:div.missions-grid {:style {:display "grid" :grid-template-columns "repeat(auto-fit, minmax(400px, 1fr))" :gap "20px"}}
-       (for [mission (:missions @app-state)]
-         ^{:key (:id mission)}
-         [mission-card mission])])]])
+      (let [missions-to-show (:filtered-missions @app-state)]
+        (if (empty? missions-to-show)
+          [:div.no-missions {:style {:color "#e0e0e0" :text-align "center" :padding "40px" :font-size "1.2rem"}}
+           [:div {:style {:font-size "3rem" :margin-bottom "16px"}} "🔍"]
+           [:div "No missions match your current filters"]
+           [:div {:style {:font-size "0.9rem" :color "#999" :margin-top "8px"}} "Try adjusting your filter criteria"]]
+          [:div.missions-grid {:style {:display "grid" :grid-template-columns "repeat(auto-fit, minmax(400px, 1fr))" :gap "20px"}}
+           (for [mission missions-to-show]
+             ^{:key (:id mission)}
+             [mission-card mission])])))]])
 
 (defn floating-action-button []
   (when (:admin? @app-state)
