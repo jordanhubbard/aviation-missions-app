@@ -101,8 +101,8 @@
         value (get mission key)]
     (when (and value (not (str/blank? (str value))))
       [:tr.mission-field {:key (name key)}
-       [:td.mission-data-label {:style {:color color :font-weight "bold" :padding "2px 8px 2px 0" :vertical-align "top" :white-space "nowrap"}} (str label ":")]
-       [:td.mission-data-value {:style {:color "#e0e0e0" :padding "2px 0" :word-wrap "break-word"}} value]])))
+       [:td.mission-data-label {:style {:color color :font-weight "bold" :padding "6px 8px 6px 8px" :vertical-align "top" :white-space "nowrap"}} (str label ":")]
+       [:td.mission-data-value {:style {:color "#e0e0e0" :padding "6px 8px" :word-wrap "break-word"}} value]])))
 
 ;; UI Components
 (defn mission-card [mission]
@@ -119,7 +119,7 @@
      
      [:div.mission-content {:style {:padding "12px"}}
       ;; Schema-driven field rendering - only shows fields that exist
-      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0"}}
+      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0" :background-color "#333" :border-radius "4px"}}
        [:tbody
         (for [field-config mission-field-config]
           ^{:key (:key field-config)}
@@ -128,14 +128,14 @@
       ;; Mission description section
       [:div.mission-section
        [:h4 {:style {:color "#64b5f6" :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "DESCRIPTION"]
-       [:p {:style {:color "#e0e0e0" :line-height "1.4" :margin "0" :border-left "3px solid #64b5f6" :padding-left "8px" :background-color "#333" :padding "8px" :border-radius "4px"}} 
+       [:p {:style {:color "#e0e0e0" :line-height "1.4" :margin "0" :border-left "3px solid #64b5f6" :padding "8px" :border-radius "4px" :background-color "#333"}} 
         (:mission_description mission)]]
       
       ;; Why section
       (when (:why_description mission)
         [:div.mission-section
          [:h4 {:style {:color "#81c784" :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "WHY THIS MISSION"]
-         [:p {:style {:color "#e0e0e0" :line-height "1.4" :margin "0" :border-left "3px solid #81c784" :padding-left "8px" :background-color "#333" :padding "8px" :border-radius "4px"}} 
+         [:p {:style {:color "#e0e0e0" :line-height "1.4" :margin "0" :border-left "3px solid #81c784" :padding "8px" :border-radius "4px" :background-color "#333"}} 
           (:why_description mission)]])
       
       ;; Flight challenges
