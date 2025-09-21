@@ -5,5 +5,5 @@
 
 (def api-base-url
   (if debug?
-    "http://localhost:3000"
+    "http://localhost:8080"
     "")) ; Empty string means same origin - should work for Railway deployment
