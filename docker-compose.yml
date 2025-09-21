@@ -8,11 +8,16 @@ services:
     ports:
       - "${PORT:-8080}:3000"
     volumes:
-      - ./data:/app/data
+      # Persistent database storage - survives container rebuilds
+      - ./data:/app/data:rw
+      # Optional: Backup directory for database exports
+      - ./backups:/app/backups:rw
     restart: unless-stopped
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - API_PORT=3000
+      # Ensure database is stored in persistent volume
+      - DATABASE_URL=./data/aviation-missions
     # Set healthcheck to ensure container is running properly
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]

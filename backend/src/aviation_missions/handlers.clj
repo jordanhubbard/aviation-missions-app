@@ -3,7 +3,8 @@
             [aviation-missions.db :as db]
             [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [clj-yaml.core :as yaml]))
 
 ;; Data validation specs
 (s/def ::non-empty-string (s/and string? #(not (str/blank? %))))
@@ -407,6 +408,19 @@
       (response {:missions missions}))
     (catch Exception e
       (-> (response {:error "Failed to export missions" :details (.getMessage e)})
+          (status 500)))))
+
+(defn export-missions-yaml [request]
+  "Export all missions as YAML"
+  (try
+    (let [missions (db/export-all-missions)
+          yaml-content (yaml/generate-string {:missions missions})]
+      (-> (response yaml-content)
+          (assoc-in [:headers "Content-Type"] "application/x-yaml")
+          (assoc-in [:headers "Content-Disposition"] "attachment; filename=\"aviation-missions.yaml\"")))
+    (catch Exception e
+      (log/error e "Failed to export missions as YAML")
+      (-> (response {:error "Failed to export missions as YAML" :details (.getMessage e)})
           (status 500)))))
 
 (defn import-missions [request]

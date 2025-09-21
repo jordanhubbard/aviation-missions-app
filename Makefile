@@ -38,6 +38,10 @@ help:
 	@echo "  lint-fast    - Fast syntax checking with clj-kondo only"
 	@echo "  lint-eastwood- Deep static analysis with eastwood"
 	@echo ""
+	@echo "  Database Management:"
+	@echo "  backup       - Create a backup of the database"
+	@echo "  restore      - Restore database from backup (requires BACKUP_FILE)"
+	@echo ""
 	@echo "  Backend Development:"
 	@echo "  dev-backend  - Start only the Clojure backend for development"
 	@echo "  dev-frontend - Start only the ClojureScript frontend for development"
@@ -180,3 +184,38 @@ test-local:
 	@echo "Testing frontend build..."
 	cd frontend && npm install && npm run build
 	@echo "✅ Local tests completed!"
+
+# Create a backup of the database
+.PHONY: backup
+backup:
+	@echo "🗄️  Creating database backup..."
+	@if [ ! -f "./data/aviation-missions.mv.db" ]; then \
+		echo "❌ No database found. Make sure the application has been started at least once."; \
+		exit 1; \
+	fi
+	@./scripts/backup-database.sh
+
+# Restore database from backup
+.PHONY: restore
+restore:
+	@echo "🔄 Restoring database from backup..."
+	@if [ -z "$(BACKUP_FILE)" ]; then \
+		echo "❌ Please specify BACKUP_FILE. Usage: make restore BACKUP_FILE=backups/aviation-missions-backup-YYYYMMDD_HHMMSS.tar.gz"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(BACKUP_FILE)" ]; then \
+		echo "❌ Backup file not found: $(BACKUP_FILE)"; \
+		exit 1; \
+	fi
+	@echo "⚠️  This will overwrite the current database. Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
+	@echo "🛑 Stopping application..."
+	@$(MAKE) stop
+	@echo "📦 Extracting backup..."
+	@mkdir -p ./temp-restore
+	@tar -xzf "$(BACKUP_FILE)" -C ./temp-restore/
+	@BACKUP_NAME=$$(basename "$(BACKUP_FILE)" .tar.gz) && \
+		cp ./temp-restore/$$BACKUP_NAME/* ./data/ && \
+		rm -rf ./temp-restore
+	@echo "🚀 Starting application..."
+	@$(MAKE) start
+	@echo "✅ Database restored successfully!"

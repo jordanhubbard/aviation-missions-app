@@ -3,6 +3,7 @@
 
 # Database files
 data/
+backups/
 *.db
 
 # Backend (Clojure)

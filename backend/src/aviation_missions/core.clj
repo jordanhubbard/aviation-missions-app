@@ -64,6 +64,7 @@
   
   ;; JSON Import/Export endpoints (admin only) - must come before /missions/:id
   (GET "/missions/export" request ((handlers/admin-required handlers/export-missions) request))
+  (GET "/missions/export/yaml" request (handlers/export-missions-yaml request))
   (POST "/missions/import" request ((handlers/admin-required handlers/import-missions) request))
   
   (GET "/missions/:id" [id] (handlers/get-mission id))
