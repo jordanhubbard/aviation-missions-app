@@ -15,12 +15,24 @@
                            :admin? false
                            :login-dialog-open false
                            :create-dialog-open false
+                           :submit-dialog-open false
                            :mission-details nil
                            :mission-brief-open false
                            :mission-rate-open false
                            :selected-mission nil
                            :user-rating 0
                            :login-credentials {:username "" :password ""}
+                           :submission-form {:title ""
+                                           :category "General Training"
+                                           :difficulty 5
+                                           :objective ""
+                                           :mission_description ""
+                                           :why_description ""
+                                           :notes ""
+                                           :route ""
+                                           :suggested_route ""
+                                           :pilot_experience "Intermediate (100-500 hours)"
+                                           :special_challenges ""}
                            :filters {:category "All Categories"
                                     :difficulty "All Difficulties"
                                     :experience "All Experience Levels"
@@ -181,6 +193,43 @@
           (swap! app-state assoc :mission-rate-open false :user-rating 0)
           (fetch-missions)) ; Refresh missions list
         (js/alert "Failed to rate mission")))))
+
+(defn submit-mission [mission-data]
+  (go
+    (let [response (<! (http/post (str config/api-base-url "/missions/submit")
+                                  {:json-params mission-data}))]
+      (if (= 200 (:status response))
+        (do
+          (js/alert "Mission submitted successfully! It will be reviewed by administrators.")
+          (swap! app-state assoc :submit-dialog-open false)
+          (swap! app-state assoc-in [:submission-form] {:title ""
+                                                       :category "General Training"
+                                                       :difficulty 5
+                                                       :objective ""
+                                                       :mission_description ""
+                                                       :why_description ""
+                                                       :notes ""
+                                                       :route ""
+                                                       :suggested_route ""
+                                                       :pilot_experience "Intermediate (100-500 hours)"
+                                                       :special_challenges ""}))
+        (js/alert "Failed to submit mission. Please try again.")))))
+
+(defn download-missions-yaml []
+  (go
+    (let [response (<! (http/get (str config/api-base-url "/missions/export/yaml")))]
+      (if (= 200 (:status response))
+        (let [yaml-content (:body response)
+              blob (js/Blob. #js [yaml-content] #js {:type "application/x-yaml"})
+              url (js/URL.createObjectURL blob)
+              link (js/document.createElement "a")]
+          (set! (.-href link) url)
+          (set! (.-download link) "aviation-missions.yaml")
+          (js/document.body.appendChild link)
+          (.click link)
+          (js/document.body.removeChild link)
+          (js/URL.revokeObjectURL url))
+        (js/alert "Failed to download missions. Please try again.")))))
 
 ;; Mission field configuration - schema-driven UI with dark theme colors
 (def mission-field-config
@@ -366,6 +415,130 @@
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-rate-open false :user-rating 0)} "Cancel"]
        [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]]]))
 
+(defn mission-submit-dialog []
+  (let [form (:submission-form @app-state)]
+    [:div.modal {:class (when (:submit-dialog-open @app-state) "modal-open")}
+     [:div.modal-backdrop {:on-click #(swap! app-state assoc :submit-dialog-open false)}]
+     [:div.modal-content {:style {:max-width "800px" :background-color "#2d2d2d" :color "#e0e0e0" :max-height "90vh" :overflow-y "auto"}}
+      [:div.modal-header {:style {:background-color "#3d3d3d" :border-bottom "1px solid #555"}}
+       [:h2 {:style {:color "#ffffff"}} "📝 Submit New Mission"]
+       [:button.modal-close {:style {:color "#ffffff"} :on-click #(swap! app-state assoc :submit-dialog-open false)} "×"]]
+      [:div.modal-body {:style {:padding "20px"}}
+       [:form {:on-submit (fn [e] 
+                           (.preventDefault e)
+                           (submit-mission form))}
+        
+        ;; Title (Required)
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#81c784" :font-weight "bold" :margin-bottom "5px"}} "Mission Title *"]
+         [:input {:type "text"
+                 :value (:title form)
+                 :placeholder "e.g., Class B Ops: LAX Bravo Transition"
+                 :required true
+                 :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                 :on-change #(swap! app-state assoc-in [:submission-form :title] (-> % .-target .-value))}]]
+        
+        ;; Category and Difficulty Row
+        [:div {:style {:display "flex" :gap "20px" :margin-bottom "20px"}}
+         [:div.form-group {:style {:flex "1"}}
+          [:label {:style {:display "block" :color "#64b5f6" :font-weight "bold" :margin-bottom "5px"}} "Category *"]
+          [:select {:value (:category form)
+                   :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                   :on-change #(swap! app-state assoc-in [:submission-form :category] (-> % .-target .-value))}
+           (for [category (rest category-options)]
+             [:option {:key category :value category} category])]]
+         [:div.form-group {:style {:flex "1"}}
+          [:label {:style {:display "block" :color "#ffb74d" :font-weight "bold" :margin-bottom "5px"}} "Difficulty (1-10) *"]
+          [:input {:type "number"
+                  :min "1" :max "10"
+                  :value (:difficulty form)
+                  :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                  :on-change #(swap! app-state assoc-in [:submission-form :difficulty] (js/parseInt (-> % .-target .-value)))}]]]
+        
+        ;; Objective (Required)
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#81c784" :font-weight "bold" :margin-bottom "5px"}} "Learning Objective *"]
+         [:textarea {:value (:objective form)
+                    :placeholder "What should pilots learn from this mission?"
+                    :required true
+                    :rows "2"
+                    :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px" :resize "vertical"}
+                    :on-change #(swap! app-state assoc-in [:submission-form :objective] (-> % .-target .-value))}]]
+        
+        ;; Mission Description (Required)
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#81c784" :font-weight "bold" :margin-bottom "5px"}} "Mission Description *"]
+         [:textarea {:value (:mission_description form)
+                    :placeholder "Detailed description of the mission, including procedures, airports, and key activities..."
+                    :required true
+                    :rows "4"
+                    :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px" :resize "vertical"}
+                    :on-change #(swap! app-state assoc-in [:submission-form :mission_description] (-> % .-target .-value))}]]
+        
+        ;; Why Description (Required)
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#81c784" :font-weight "bold" :margin-bottom "5px"}} "Educational Rationale *"]
+         [:textarea {:value (:why_description form)
+                    :placeholder "Why is this mission valuable for pilot training?"
+                    :required true
+                    :rows "2"
+                    :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px" :resize "vertical"}
+                    :on-change #(swap! app-state assoc-in [:submission-form :why_description] (-> % .-target .-value))}]]
+        
+        ;; Route and Suggested Route Row
+        [:div {:style {:display "flex" :gap "20px" :margin-bottom "20px"}}
+         [:div.form-group {:style {:flex "1"}}
+          [:label {:style {:display "block" :color "#64b5f6" :font-weight "bold" :margin-bottom "5px"}} "Route Description"]
+          [:input {:type "text"
+                  :value (:route form)
+                  :placeholder "e.g., KPAO → coastal route south → LAX Bravo → KTOA"
+                  :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                  :on-change #(swap! app-state assoc-in [:submission-form :route] (-> % .-target .-value))}]]
+         [:div.form-group {:style {:flex "1"}}
+          [:label {:style {:display "block" :color "#64b5f6" :font-weight "bold" :margin-bottom "5px"}} "Suggested Waypoints"]
+          [:input {:type "text"
+                  :value (:suggested_route form)
+                  :placeholder "e.g., KPAO KWVI KHHR KTOA"
+                  :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                  :on-change #(swap! app-state assoc-in [:submission-form :suggested_route] (-> % .-target .-value))}]]]
+        
+        ;; Pilot Experience
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#ba68c8" :font-weight "bold" :margin-bottom "5px"}} "Target Pilot Experience"]
+         [:select {:value (:pilot_experience form)
+                  :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                  :on-change #(swap! app-state assoc-in [:submission-form :pilot_experience] (-> % .-target .-value))}
+          (for [exp (rest experience-options)]
+            [:option {:key exp :value exp} exp])]]
+        
+        ;; Special Challenges
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#f48fb1" :font-weight "bold" :margin-bottom "5px"}} "Special Challenges"]
+         [:input {:type "text"
+                 :value (:special_challenges form)
+                 :placeholder "e.g., Mountain Flying, High Altitude, Weather"
+                 :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
+                 :on-change #(swap! app-state assoc-in [:submission-form :special_challenges] (-> % .-target .-value))}]]
+        
+        ;; Notes
+        [:div.form-group {:style {:margin-bottom "20px"}}
+         [:label {:style {:display "block" :color "#90a4ae" :font-weight "bold" :margin-bottom "5px"}} "Additional Notes"]
+         [:textarea {:value (:notes form)
+                    :placeholder "Tips, considerations, or additional information for pilots..."
+                    :rows "3"
+                    :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px" :resize "vertical"}
+                    :on-change #(swap! app-state assoc-in [:submission-form :notes] (-> % .-target .-value))}]]]]]
+      
+      [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
+       [:button.btn.btn-secondary {:type "button" :style {:background-color "#666" :color "#fff"} :on-click #(swap! app-state assoc :submit-dialog-open false)} "Cancel"]
+       [:button.btn.btn-primary {:type "button" 
+                                :style {:background-color "#81c784" :color "#000"}
+                                :disabled (or (str/blank? (:title form))
+                                            (str/blank? (:objective form))
+                                            (str/blank? (:mission_description form))
+                                            (str/blank? (:why_description form)))
+                                :on-click #(submit-mission form)} "Submit Mission"]]]))
+
 (defn filter-dropdown [label options current-value filter-key]
   [:div.filter-dropdown {:style {:display "flex" :flex-direction "column" :gap "4px"}}
    [:label {:style {:color "#e0e0e0" :font-size "0.8rem" :font-weight "bold"}} label]
@@ -420,8 +593,10 @@
       (if (:admin? @app-state)
         [:span {:style {:color "#81c784" :font-weight "bold" :background-color "#2d2d2d" :padding "8px 12px" :border-radius "4px" :border "1px solid #555"}} "👨‍💼 ADMIN MODE"]
         [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
-         [:button.btn.btn-primary {:style {:background-color "#81c784" :color "#000" :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(js/alert "Submit Mission functionality coming soon!")} 
+         [:button.btn.btn-primary {:style {:background-color "#81c784" :color "#000" :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :submit-dialog-open true)} 
           "📝 Submit Mission"]
+         [:button.btn.btn-info {:style {:background-color "#ff9800" :color "#000" :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(download-missions-yaml)} 
+          "📥 Download"]
          [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#64b5f6" :border "1px solid #666" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :login-dialog-open true)} 
           "🔐 Admin Login"]])]]]])
 
@@ -465,6 +640,7 @@
    [create-mission-dialog]
    [mission-brief-dialog]
    [mission-rate-dialog]
+   [mission-submit-dialog]
    [floating-action-button]])
 
 ;; Initialization
