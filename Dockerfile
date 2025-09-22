@@ -1,5 +1,5 @@
 # Multi-stage build for Clojure backend + ClojureScript frontend
-FROM alpine:3.18 AS base
+FROM alpine:3.22 AS base
 
 # Install system dependencies
 RUN apk add --no-cache \
