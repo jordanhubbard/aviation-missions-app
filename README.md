@@ -1,548 +1,324 @@
-# Aviation Mission Management System
+# ✈️ Aviation Mission Management System
 
-A full-stack web application for managing general aviation training missions. Built with Clojure backend and TypeScript/React frontend, fully containerized with Docker.
+[![CI/CD Pipeline](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/jordanhubbard/aviation-missions-app/security)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/jordanhubbard/aviation-missions-app)
 
-## Features
+> A modern, full-stack web application for managing general aviation training missions. Built with Clojure backend and ClojureScript/Reagent frontend, featuring a comprehensive mission catalog, community interactions, and administrative tools.
 
-- **Mission Catalog**: Browse and search aviation training missions by category and difficulty
-- **Mission Details**: Comprehensive mission information including objectives, procedures, and routes
-- **Community Features**: Comments, reviews, and completion tracking
-- **Mission Submission**: Community-driven mission suggestions with admin review
-- **API Documentation**: Full OpenAPI/Swagger documentation with introspection
-- **Responsive Design**: Modern Bootstrap-based UI that works on all devices
+## 🌟 Features
 
-## Quick Start
+### Core Functionality
+- **📚 Mission Catalog**: Browse and search aviation training missions by category, difficulty, and pilot experience level
+- **🎯 Mission Details**: Comprehensive mission information including objectives, procedures, routes, and flight challenges
+- **💬 Community Features**: Comments, ratings, and completion tracking for each mission
+- **📝 Mission Submission**: Community-driven mission suggestions with administrative review workflow
+- **👨‍💼 Admin Panel**: Administrative tools for mission management, user oversight, and system configuration
 
-### Using Docker (Recommended)
+### Technical Features
+- **🔍 Advanced Filtering**: Real-time search and filtering by multiple criteria
+- **📱 Responsive Design**: Modern dark-themed UI that works seamlessly on all devices
+- **🔒 Secure Authentication**: Admin authentication with session management
+- **📊 API Documentation**: Full OpenAPI/Swagger documentation with interactive interface
+- **💾 Data Persistence**: Robust H2 database with backup/restore capabilities
+- **🚀 Containerized Deployment**: Docker-based deployment with multi-stage builds
 
-1. **Clone and build**:
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker and Docker Compose
+- Git
+
+### Installation
+
+1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd scenario-generator
-   make build
+   git clone https://github.com/jordanhubbard/aviation-missions-app.git
+   cd aviation-missions-app
    ```
 
-2. **Start the application**:
+2. **Build and start the application**:
    ```bash
+   make build
    make start
    ```
 
 3. **Access the application**:
-   - Web Interface: http://localhost:8080 (default, configurable via WEB_PORT)
-   - API Documentation: http://localhost:8080/docs/ (uses WEB_PORT)
-   - API Endpoint: http://localhost:3000 (default, configurable via API_PORT)
+   - **Web Interface**: http://localhost:8080
+   - **API Documentation**: http://localhost:8080/api/swagger.json
+   - **API Endpoint**: http://localhost:3000
 
-### Custom Port Configuration
+### Custom Configuration
 
-You can override the default ports using environment variables:
+Override default ports using environment variables:
 
 ```bash
 # Use custom ports
-WEB_PORT=9000 API_PORT=4000 make start
+PORT=9000 API_PORT=4000 make start
 
-# Or set them permanently in your shell
-export WEB_PORT=9000
+# Or set permanently
+export PORT=9000
 export API_PORT=4000
 make start
 ```
 
-The application will then be available at:
-- Web Interface: http://localhost:9000
-- API Documentation: http://localhost:9000/docs/
-- API Endpoint: http://localhost:4000
+## 🏗️ Architecture
 
-### Development Mode
+### Technology Stack
 
-1. **Setup development environment**:
-   ```bash
-   make dev-setup
-   ```
+#### Backend (Clojure)
+- **Framework**: Ring + Compojure for HTTP handling
+- **Database**: H2 embedded database with file persistence
+- **API**: RESTful JSON API with comprehensive endpoints
+- **Documentation**: OpenAPI/Swagger specification
+- **Testing**: Clojure.test with comprehensive test suite
 
-2. **Start backend** (Terminal 1):
+#### Frontend (ClojureScript + Reagent)
+- **Framework**: Reagent (ClojureScript React wrapper)
+- **Build Tool**: Shadow-CLJS for compilation and hot reloading
+- **State Management**: Reagent atoms with reactive updates
+- **HTTP Client**: cljs-http for API communication
+- **UI Framework**: Custom dark theme with responsive design
+
+#### Infrastructure
+- **Containerization**: Multi-stage Docker builds for optimization
+- **Reverse Proxy**: Nginx for serving static assets and API proxying
+- **Database**: File-based H2 with volume persistence
+- **CI/CD**: GitHub Actions with comprehensive testing and security scanning
+
+## 📖 API Reference
+
+### Mission Management
+- `GET /missions` - List all missions with optional filtering
+- `GET /missions/:id` - Retrieve specific mission details
+- `POST /missions` - Create new mission (admin only)
+- `PUT /missions/:id` - Update existing mission (admin only)
+- `DELETE /missions/:id` - Delete mission (admin only)
+
+### Community Interactions
+- `GET /missions/:id/comments` - Get mission comments
+- `POST /missions/:id/comments` - Add comment to mission
+- `POST /missions/:id/complete` - Mark mission as completed
+- `POST /missions/:id/rate` - Rate mission (1-5 stars)
+- `GET /missions/:id/rating` - Get user's rating for mission
+
+### Mission Submissions
+- `GET /submissions` - List pending submissions (admin only)
+- `POST /submissions` - Submit new mission for review
+- `PUT /submissions/:id/approve` - Approve submission (admin only)
+- `PUT /submissions/:id/reject` - Reject submission (admin only)
+
+### System Endpoints
+- `GET /health` - Application health check
+- `GET /swagger.json` - OpenAPI specification
+- `GET /missions/export/yaml` - Export all missions as YAML
+
+## 🛠️ Development
+
+### Local Development Setup
+
+1. **Backend development**:
    ```bash
    make dev-backend
+   # Starts Clojure REPL server on http://localhost:3000
    ```
 
-3. **Start frontend** (Terminal 2):
+2. **Frontend development**:
    ```bash
    make dev-frontend
+   # Starts Shadow-CLJS with hot reloading
    ```
 
-4. **Access development servers**:
-   - Frontend: http://localhost:3001
-   - Backend API: http://localhost:3000
+3. **Full development environment**:
+   ```bash
+   make dev
+   # Starts both backend and frontend in development mode
+   ```
 
-## Architecture
-
-### Backend (Clojure)
-- **Framework**: Ring + Compojure
-- **Database**: H2 (embedded, file-based)
-- **API**: RESTful with JSON
-- **Documentation**: OpenAPI/Swagger spec
-- **Port**: 3000 (configurable via API_PORT)
-
-### Frontend (TypeScript + React)
-- **Framework**: React 18 + TypeScript
-- **UI Library**: React Bootstrap
-- **Build Tool**: Vite
-- **State Management**: React Query
-- **Port**: 8080 (configurable via WEB_PORT)
-
-### Container Architecture
-- **Single Container**: Both services run in one container
-- **Reverse Proxy**: Nginx serves frontend and proxies API calls
-- **Database**: H2 file database persisted in Docker volume
-- **Networking**: Internal communication between services
-
-## Configuration
-
-Environment variables can be set in a `.env` file (copy from `env.example`):
+### Code Quality
 
 ```bash
-WEB_PORT=8080          # Web interface port
-API_PORT=3000          # API server port
-DATABASE_URL=jdbc:h2:./data/aviation-missions  # Database location
+# Comprehensive linting (clj-kondo + eastwood + compilation)
+make lint
+
+# Fast syntax checking
+make lint-fast
+
+# Deep static analysis
+make lint-eastwood
 ```
 
-## API Endpoints
-
-### Missions
-- `GET /missions` - List all missions (with filtering)
-- `GET /missions/:id` - Get mission details
-- `POST /missions` - Create new mission
-- `PUT /missions/:id` - Update mission
-- `DELETE /missions/:id` - Delete mission
-
-### Interactions
-- `GET /missions/:id/comments` - Get mission comments
-- `POST /missions/:id/comments` - Add comment
-- `GET /missions/:id/reviews` - Get mission reviews
-- `POST /missions/:id/reviews` - Add review
-- `POST /missions/:id/completed` - Mark mission completed
-
-### Submissions
-- `GET /submissions` - List submissions (admin)
-- `POST /submissions` - Submit new mission
-- `PUT /submissions/:id/approve` - Approve submission
-- `PUT /submissions/:id/reject` - Reject submission
-
-### Documentation
-- `GET /swagger.json` - OpenAPI specification (JSON)
-- `/docs/` - Interactive Swagger UI documentation
-
-## Database Schema
-
-The application uses H2 database with the following tables:
-- `missions` - Core mission data
-- `comments` - Mission comments
-- `reviews` - Mission reviews and ratings
-- `mission_completions` - Completion tracking
-- `submissions` - Pending mission submissions
-
-## Mission Format
-
-Missions follow a structured format with:
-- **Title** and **Category**
-- **Difficulty** rating (1-10)
-- **Objective** - What pilots will learn
-- **Mission Description** - Detailed procedures
-- **Why Description** - Educational value
-- **Route** - Suggested flight path
-- **Notes** - Additional considerations
-
-## Development
-
-### Backend Development
-```bash
-cd backend
-lein ring server-headless 3000  # Start development server
-lein test                       # Run tests
-lein uberjar                   # Build production JAR
-```
-
-### Frontend Development
-```bash
-cd frontend
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run lint     # Run linter
-```
-
-### Docker Development
-```bash
-make build       # Build container
-make start       # Start application
-make logs        # View logs
-make shell       # Access container shell
-make stop        # Stop application
-make clean       # Clean up containers
-```
-
-## Deployment
-
-### Quick Production Deployment
-```bash
-# Clone and build
-git clone <repository-url>
-cd scenario-generator
-make build
-
-# Start with custom ports
-WEB_PORT=80 API_PORT=3000 make start
-```
-
-### Automated Cloud Deployment
-Use the included deployment script for easy cloud deployment:
+### Testing
 
 ```bash
-# Make the script executable
-chmod +x deploy-cloud.sh
+# Run all tests
+make test-local
 
-# Deploy to different providers
-./deploy-cloud.sh docker-hub
-./deploy-cloud.sh aws-ecs
-./deploy-cloud.sh google-run
-./deploy-cloud.sh azure-aci
-./deploy-cloud.sh kubernetes
-./deploy-cloud.sh railway
-./deploy-cloud.sh heroku
+# Backend tests only
+cd backend && lein test
 
-# With custom options
-./deploy-cloud.sh google-run --image-name my-aviation-app --web-port 80
+# Frontend build verification
+cd frontend && npm run build
 ```
 
-### Containerized Service Providers
+## 🚢 Deployment
 
-#### Docker Hub / Container Registry Deployment
-
-**Step 1: Build and Push to Registry**
-```bash
-# Build the image
-docker build -t your-registry/aviation-missions:latest .
-
-# Push to your registry (Docker Hub, AWS ECR, Google Container Registry, etc.)
-docker push your-registry/aviation-missions:latest
-```
-
-**Step 2: Deploy with Docker Compose**
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
-services:
-  aviation-app:
-    image: your-registry/aviation-missions:latest
-    ports:
-      - "80:8080"    # Map host port 80 to container port 8080
-      - "3000:3000"  # API port (optional for direct access)
-    environment:
-      - WEB_PORT=8080
-      - API_PORT=3000
-      - DATABASE_URL=jdbc:h2:./data/aviation-missions
-    volumes:
-      - aviation_data:/app/data  # Persist database
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  aviation_data:
-```
+### Docker Deployment
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+# Production deployment
+make start
+
+# View logs
+make logs
+
+# Stop application
+make stop
+
+# Complete cleanup
+make clean
 ```
 
-#### AWS ECS (Elastic Container Service)
+### Cloud Deployment
 
-**Task Definition JSON:**
-```json
-{
-  "family": "aviation-missions",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskExecutionRole",
-  "containerDefinitions": [
-    {
-      "name": "aviation-app",
-      "image": "your-registry/aviation-missions:latest",
-      "portMappings": [
-        {
-          "containerPort": 8080,
-          "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {"name": "WEB_PORT", "value": "8080"},
-        {"name": "API_PORT", "value": "3000"}
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/aviation-missions",
-          "awslogs-region": "us-east-1",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3
-      }
-    }
-  ]
-}
-```
+The application is designed for easy deployment on various cloud platforms:
 
-**Deploy with AWS CLI:**
-```bash
-# Register task definition
-aws ecs register-task-definition --cli-input-json file://task-definition.json
-
-# Create or update service
-aws ecs create-service \
-  --cluster your-cluster \
-  --service-name aviation-missions \
-  --task-definition aviation-missions:1 \
-  --desired-count 1 \
-  --launch-type FARGATE \
-  --network-configuration "awsvpcConfiguration={subnets=[subnet-12345],securityGroups=[sg-12345],assignPublicIp=ENABLED}"
-```
-
-#### Google Cloud Run
-
-```bash
-# Build and push to Google Container Registry
-docker build -t gcr.io/YOUR-PROJECT-ID/aviation-missions:latest .
-docker push gcr.io/YOUR-PROJECT-ID/aviation-missions:latest
-
-# Deploy to Cloud Run
-gcloud run deploy aviation-missions \
-  --image gcr.io/YOUR-PROJECT-ID/aviation-missions:latest \
-  --platform managed \
-  --region us-central1 \
-  --port 8080 \
-  --set-env-vars WEB_PORT=8080,API_PORT=3000 \
-  --memory 1Gi \
-  --cpu 1 \
-  --max-instances 10 \
-  --allow-unauthenticated
-```
-
-#### Azure Container Instances
-
-```bash
-# Create resource group
-az group create --name aviation-rg --location eastus
-
-# Deploy container
-az container create \
-  --resource-group aviation-rg \
-  --name aviation-missions \
-  --image your-registry/aviation-missions:latest \
-  --ports 8080 \
-  --environment-variables WEB_PORT=8080 API_PORT=3000 \
-  --cpu 1 \
-  --memory 1 \
-  --restart-policy Always
-```
-
-#### Kubernetes Deployment
-
-**deployment.yaml:**
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: aviation-missions
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: aviation-missions
-  template:
-    metadata:
-      labels:
-        app: aviation-missions
-    spec:
-      containers:
-      - name: aviation-app
-        image: your-registry/aviation-missions:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: WEB_PORT
-          value: "8080"
-        - name: API_PORT
-          value: "3000"
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: aviation-missions-service
-spec:
-  selector:
-    app: aviation-missions
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
-  type: LoadBalancer
-```
-
-```bash
-kubectl apply -f deployment.yaml
-```
-
-#### Railway
-
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login and initialize
-railway login
-railway init
-
-# Deploy
-railway up
-```
-
-**railway.json:**
-```json
-{
-  "build": {
-    "builder": "DOCKER"
-  },
-  "deploy": {
-    "startCommand": "/start.sh",
-    "healthcheckPath": "/health"
-  }
-}
-```
-
-#### Heroku (Container Registry)
-
-```bash
-# Login to Heroku Container Registry
-heroku container:login
-
-# Create Heroku app
-heroku create your-aviation-app
-
-# Build and push
-heroku container:push web --app your-aviation-app
-heroku container:release web --app your-aviation-app
-
-# Set environment variables
-heroku config:set WEB_PORT=8080 --app your-aviation-app
-heroku config:set API_PORT=3000 --app your-aviation-app
-```
-
-**heroku.yml:**
-```yaml
-build:
-  docker:
-    web: Dockerfile
-run:
-  web: /start.sh
-```
+- **Railway**: Automatic deployment from GitHub
+- **Heroku**: Container registry deployment
+- **AWS ECS**: Fargate or EC2 deployment
+- **Google Cloud Run**: Serverless container deployment
+- **Azure Container Instances**: Simple container hosting
+- **Kubernetes**: Full orchestration support
 
 ### Environment Variables
 
-**Required:**
-- `WEB_PORT` - Port for web interface (default: 8080)
-- `API_PORT` - Port for API server (default: 3000)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8080` | Main application port |
+| `API_PORT` | `3000` | Backend API port |
+| `DATABASE_URL` | `./data/aviation-missions` | H2 database location |
+| `ENVIRONMENT` | `production` | Runtime environment |
 
-**Optional:**
-- `DATABASE_URL` - Database connection string (default: `jdbc:h2:./data/aviation-missions`)
+## 💾 Data Management
 
-### Data Persistence
+### Database Backup
 
-**Important:** The application uses an H2 database that stores data in `/app/data/`. For production deployments:
+```bash
+# Create backup
+make backup
 
-1. **Docker Volumes:** Mount a volume to `/app/data/`
-2. **Cloud Storage:** Use persistent volumes or managed databases
-3. **Backup Strategy:** Regularly backup the `aviation-missions.mv.db` file
+# Restore from backup
+make restore BACKUP_FILE=backups/aviation-missions-backup-20231201_120000.tar.gz
+```
 
-### SSL/TLS and Domain Setup
+### Mission Data Format
 
-Most container services provide automatic HTTPS. For custom domains:
+Missions are structured with:
+- **Metadata**: Title, category, difficulty (1-10), pilot experience level
+- **Educational**: Objective, mission description, educational rationale
+- **Operational**: Route description, suggested waypoints, special challenges
+- **Community**: Comments, ratings, completion tracking
 
-1. **Cloud Providers:** Use their load balancer/ingress with SSL certificates
-2. **Reverse Proxy:** Place nginx/Traefik in front with Let's Encrypt
-3. **CDN:** Use CloudFlare or similar for SSL termination
+## 🤝 Contributing
 
-### Monitoring and Logs
+We welcome contributions! Here's how to get started:
 
-The application provides:
-- **Health Check Endpoint:** `GET /health`
-- **API Documentation:** `/docs/`
-- **Structured Logging:** Container logs via stdout/stderr
-
-### Scaling Considerations
-
-- **Stateless Design:** Application can run multiple instances
-- **Database:** Currently uses H2 (single file). For high availability, consider:
-  - PostgreSQL with connection pooling
-  - MySQL with read replicas
-  - Cloud database services (RDS, Cloud SQL, etc.)
-
-### Security Recommendations
-
-1. **Admin Authentication:** Change default admin password
-2. **Network Security:** Use private networks where possible
-3. **Container Security:** Regularly update base images
-4. **Secrets Management:** Use container orchestration secrets for sensitive data
-
-### Cost Optimization
-
-- **Resource Limits:** Set appropriate CPU/memory limits
-- **Auto-scaling:** Configure based on traffic patterns
-- **Sleep/Wake:** Use services that can scale to zero during low usage
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+1. **Fork the repository** on GitHub
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** and ensure tests pass
+4. **Commit your changes**: `git commit -m 'Add amazing feature'`
+5. **Push to the branch**: `git push origin feature/amazing-feature`
+6. **Open a Pull Request**
 
 ### Mission Contributions
-Use the "Submit Mission" feature in the web interface to contribute new missions. All submissions are reviewed before publication.
 
-## License
+Use the "Submit Mission" feature in the web interface to contribute new missions. All submissions are reviewed by administrators before publication.
 
-[License information]
+### Development Guidelines
 
-## Support
+- Follow Clojure style conventions
+- Write comprehensive tests for new features
+- Update documentation for API changes
+- Ensure Docker builds pass
+- Run linting before submitting PRs
 
-For support and questions:
-- Check the API documentation at `/api/swagger.json`
-- Review the mission format in `missions.txt`
-- Open an issue in the repository
+## 🔒 Security
+
+### Security Features
+- Input validation and sanitization
+- SQL injection prevention
+- XSS protection
+- CSRF protection
+- Secure session management
+
+### Reporting Security Issues
+
+Please report security vulnerabilities privately by:
+1. **GitHub Security Advisories**: Use the [Security tab](https://github.com/jordanhubbard/aviation-missions-app/security/advisories) to report vulnerabilities
+2. **Email**: Contact the maintainer directly for sensitive issues
+
+### Security Scanning
+
+The project includes automated security scanning:
+- **Trivy**: Vulnerability scanning for dependencies and Docker images
+- **CodeQL**: Static analysis for security issues
+- **Dependabot**: Automated dependency updates
+
+## 📊 Project Status
+
+### Build Status
+- **CI/CD Pipeline**: [![CI/CD](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions)
+- **Security Scans**: Automated vulnerability scanning on every commit
+- **Test Coverage**: Comprehensive backend and frontend testing
+
+### Links
+- **Issues**: [Report bugs or request features](https://github.com/jordanhubbard/aviation-missions-app/issues)
+- **Discussions**: [Community discussions](https://github.com/jordanhubbard/aviation-missions-app/discussions)
+- **Releases**: [View all releases](https://github.com/jordanhubbard/aviation-missions-app/releases)
+- **Security**: [Security advisories](https://github.com/jordanhubbard/aviation-missions-app/security)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+**Jordan Hubbard** ([@jordanhubbard](https://github.com/jordanhubbard))
+
+## 🙏 Acknowledgments
+
+- General aviation community for mission inspiration
+- Clojure community for excellent tooling and libraries
+- Contributors and testers who help improve the application
+
+## 📞 Support
+
+### Getting Help
+- **Documentation**: Check the API documentation at `/swagger.json`
+- **Issues**: [Open an issue](https://github.com/jordanhubbard/aviation-missions-app/issues) for bugs or feature requests
+- **Discussions**: [Join community discussions](https://github.com/jordanhubbard/aviation-missions-app/discussions)
+
+### FAQ
+
+**Q: How do I add new missions?**
+A: Use the "Submit Mission" feature in the web interface. Submissions are reviewed before publication.
+
+**Q: Can I run this on my own server?**
+A: Yes! The application is fully containerized and can be deployed anywhere Docker runs.
+
+**Q: How do I backup my data?**
+A: Use `make backup` to create database backups. The H2 database files are stored in the `./data/` directory.
+
+**Q: Is there a mobile app?**
+A: The web interface is fully responsive and works well on mobile devices. A native mobile app is not currently planned.
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#-aviation-mission-management-system)**
+
+Made with ❤️ for the general aviation community
+
+</div>
