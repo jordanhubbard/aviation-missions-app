@@ -364,11 +364,11 @@
       ;; Use environment variables for admin credentials
       (let [admin-user (or (System/getenv "ADMIN_USERNAME") "admin")
             admin-pass (or (System/getenv "ADMIN_PASSWORD") "aviation123")]
-          (if (and (= admin-name admin-user) (= password admin-pass))
-            (let [token (db/create-admin-session! admin-name)]
-              (response {:token token :admin_name admin-name}))
-            (-> (response {:error "Invalid credentials"})
-                (status 401))))))
+        (if (and (= admin-name admin-user) (= password admin-pass))
+          (let [token (db/create-admin-session! admin-name)]
+            (response {:token token :admin_name admin-name}))
+          (-> (response {:error "Invalid credentials"})
+              (status 401)))))
     (catch Exception e
       (-> (response {:error "Login failed" :details (.getMessage e)})
           (status 500)))))

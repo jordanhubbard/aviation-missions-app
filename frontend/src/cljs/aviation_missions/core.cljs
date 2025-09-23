@@ -350,7 +350,7 @@
             ^{:key (:label challenge)}
             [:div.challenge-item {:style {:background-color (:bg-quaternary colors) :border (str "1px solid " (:separator colors)) :color (:accent-orange colors) :padding "6px 10px" :border-radius "4px" :display "flex" :align-items "center" :gap "6px"}}
              [:span.challenge-icon (:icon challenge)]
-             [:span.challenge-label (:label challenge)]])])]
+             [:span.challenge-label (:label challenge)]])]])
      
      [:div.mission-footer {:style {:background-color (:bg-tertiary colors) :padding "12px" :border-radius "0 0 8px 8px" :border-top (str "1px solid " (:separator colors)) :display "flex" :justify-content "space-between" :align-items "center"}}
       [:div.pilot-experience {:style {:color (:accent-purple colors) :font-weight "bold" :font-size "0.85rem"}} 
@@ -367,7 +367,7 @@
        [:button.btn-mission 
         {:style {:background-color (:bg-quaternary colors) :color (:accent-orange colors) :border (str "1px solid " (:separator colors)) :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
          :on-click #(do (swap! app-state assoc :selected-mission mission :mission-rate-open true :user-rating 0))} 
-        "⭐ RATE"]]))
+        "⭐ RATE"]]]
 
 (defn admin-login-dialog []
   [:div.modal {:class (when (:login-dialog-open @app-state) "modal-open")}
@@ -400,7 +400,7 @@
                :on-change #(swap! app-state assoc-in [:login-credentials :password] (.. % -target -value))}]]]
     [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
      [:button.btn.btn-secondary {:style {:background-color "#666" :color "#fff"} :on-click #(swap! app-state assoc :login-dialog-open false)} "Cancel"]
-     [:button.btn.btn-primary {:style {:background-color "#4caf50" :color "#000"} :on-click #(admin-login (:login-credentials @app-state))} "Login"]]])
+     [:button.btn.btn-primary {:style {:background-color "#4caf50" :color "#000"} :on-click #(admin-login (:login-credentials @app-state))} "Login"]]]
 
 (defn create-mission-dialog []
   [:div.modal {:class (when (:create-dialog-open @app-state) "modal-open")}
@@ -413,7 +413,7 @@
      [:p "Mission creation form would go here..."]]
     [:div.modal-footer
      [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :create-dialog-open false)} "Cancel"]
-     [:button.btn.btn-primary "Create Mission"]]])
+     [:button.btn.btn-primary "Create Mission"]]]
 
 (defn mission-brief-dialog []
   (let [mission (:selected-mission @app-state)]
@@ -440,8 +440,7 @@
          [:div.brief-section
           [:h3 {:style {:color "#ffb74d" :margin-bottom "10px"}} "Why This Mission"]
           [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
-           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]
-       
+           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]]) 
        (when (:route mission)
          [:div.brief-section
           [:h3 {:style {:color "#e57373" :margin-bottom "10px"}} "Route Information"]
@@ -454,11 +453,10 @@
          [:div.brief-section
           [:h3 {:style {:color "#ba68c8" :margin-bottom "10px"}} "Additional Notes"]
           [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px"}}
-           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]]
-      
+           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]])
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-brief-open false)} "Close Brief"]
-       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]]]))))
+       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]))
 
 (defn mission-rate-dialog []
   (let [mission (:selected-mission @app-state)
@@ -723,8 +721,7 @@
      [create-mission-dialog]
      [mission-brief-dialog]
      [mission-rate-dialog]
-     [mission-submit-dialog]
-     [floating-action-button]]))
+     [mission-submit-dialog]]))
 
 ;; Initialization
 (defn ^:dev/after-load mount-root []
