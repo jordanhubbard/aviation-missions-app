@@ -11,8 +11,9 @@
    :user "sa"
    :password ""})
 
-(defn init-db! []
+(defn init-db!
   "Initialize the database with required tables"
+  []
   (log/info "🏁 STARTUP PHASE 1: Initializing database...")
   (jdbc/execute! db-spec
     ["CREATE TABLE IF NOT EXISTS missions (
@@ -36,7 +37,7 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE missions ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column already exists, ignore
       ))
   
@@ -44,14 +45,14 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE missions DROP COLUMN recommended_aircraft"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column doesn't exist or already dropped, ignore
       ))
   
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE missions ADD COLUMN special_challenges TEXT DEFAULT ''"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column already exists, ignore
       ))
   
@@ -122,7 +123,7 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE submissions ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column already exists, ignore
       ))
   
@@ -130,7 +131,7 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE submissions DROP COLUMN recommended_aircraft"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column doesn't exist or already dropped, ignore
       ))
   
@@ -160,7 +161,7 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE mission_updates ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column already exists, ignore
       ))
   
@@ -168,7 +169,7 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE mission_updates DROP COLUMN recommended_aircraft"])
-    (catch Exception e
+    (catch Exception _e
       ;; Column doesn't exist or already dropped, ignore
       ))
   
@@ -359,16 +360,18 @@
       WHERE session_token = ? AND expires_at > CURRENT_TIMESTAMP" token])))
 
 ;; JSON Import/Export functions
-(defn export-all-missions []
+(defn export-all-missions
   "Export all missions as a vector of maps for JSON serialization"
+  []
   (jdbc/query db-spec
     ["SELECT id, title, category, difficulty, objective, mission_description, 
              why_description, notes, route, suggested_route, pilot_experience, 
              created_at, updated_at 
       FROM missions ORDER BY id"]))
 
-(defn import-missions! [missions-data]
+(defn import-missions!
   "Import missions from JSON data. Returns count of imported missions."
+  [missions-data]
   (let [imported-count (atom 0)]
     (doseq [mission missions-data]
       (try

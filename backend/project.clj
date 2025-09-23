@@ -21,6 +21,7 @@
                  [org.clojure/tools.logging "1.2.4"]
                  [clj-commons/clj-yaml "1.0.29"]
                  [ch.qos.logback/logback-classic "1.4.14"]]
+  :plugins [[jonase/eastwood "1.4.2"]]
   :main ^:skip-aot aviation-missions.core
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[ring/ring-mock "0.4.0"]]}

@@ -2,13 +2,15 @@
   (:require [clojure.string :as str]
             [aviation-missions.db :as db]))
 
-(defn parse-difficulty [text]
+(defn parse-difficulty
   "Extract difficulty rating from text like '(difficulty: 7/10)'"
+  [text]
   (when-let [match (re-find #"difficulty:\s*(\d+)/10" text)]
     (Integer/parseInt (second match))))
 
-(defn parse-mission-section [lines]
+(defn parse-mission-section
   "Parse a single mission section from lines"
+  [lines]
   (let [title-line (first lines)
         [title difficulty-str] (if (str/includes? title-line "(difficulty:")
                                  (str/split title-line #"\s*\(difficulty:")
@@ -42,8 +44,9 @@
        :route route
        :suggested_route suggested-route})))
 
-(defn determine-category [title]
+(defn determine-category
   "Determine mission category based on title and content"
+  [title]
   (let [title-lower (str/lower-case title)]
     (cond
       (or (str/includes? title-lower "class b")
@@ -79,8 +82,9 @@
           (str/includes? title-lower "extreme")) "Advanced Adventures"
       :else "General Training")))
 
-(defn parse-missions-file [file-path]
+(defn parse-missions-file
   "Parse the missions.txt file and return structured mission data"
+  [file-path]
   (try
     (let [content (slurp file-path)
           lines (str/split-lines content)
@@ -141,8 +145,9 @@
       (println "Error parsing missions file:" (.getMessage e))
       [])))
 
-(defn seed-database-with-missions! [file-path]
+(defn seed-database-with-missions!
   "Parse missions file and seed database"
+  [file-path]
   (println "Parsing missions from" file-path)
   (let [missions (parse-missions-file file-path)]
     (println "Found" (count missions) "missions to import")

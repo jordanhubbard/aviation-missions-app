@@ -128,7 +128,7 @@
 
 (defn -main
   "Start the server"
-  [& args]
+  [& _args]
   (log/info "🚀 Aviation Mission Management System starting up...")
 
   ;; Phase 1: Database initialization

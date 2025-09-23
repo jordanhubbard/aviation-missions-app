@@ -350,7 +350,7 @@
             ^{:key (:label challenge)}
             [:div.challenge-item {:style {:background-color (:bg-quaternary colors) :border (str "1px solid " (:separator colors)) :color (:accent-orange colors) :padding "6px 10px" :border-radius "4px" :display "flex" :align-items "center" :gap "6px"}}
              [:span.challenge-icon (:icon challenge)]
-             [:span.challenge-label (:label challenge)]])]])]
+             [:span.challenge-label (:label challenge)]])])]
      
      [:div.mission-footer {:style {:background-color (:bg-tertiary colors) :padding "12px" :border-radius "0 0 8px 8px" :border-top (str "1px solid " (:separator colors)) :display "flex" :justify-content "space-between" :align-items "center"}}
       [:div.pilot-experience {:style {:color (:accent-purple colors) :font-weight "bold" :font-size "0.85rem"}} 

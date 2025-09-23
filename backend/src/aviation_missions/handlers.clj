@@ -29,7 +29,7 @@
   [headers]
   (when-let [auth-header (or (get headers "authorization")
                              (get headers "Authorization"))]
-    (when (.startsWith auth-header "Bearer ")
+    (when (.startsWith ^String auth-header "Bearer ")
       (subs auth-header 7))))
 
 (defn- validate-mission-data
@@ -60,11 +60,12 @@
         (handler request)
         (handle-error 401 "Admin authentication required")))))
 
-(defn get-missions [request]
+(defn get-missions
   "Get all missions with filtering and sorting options"
+  [request]
   (try
     (let [params (:params request)
-          {:keys [category difficulty pilot_experience sort]} params
+          {:keys [category difficulty pilot_experience]} params
           missions (db/get-all-missions)
           filtered-missions (cond->> missions
                               category (filter #(= (:category %) category))
@@ -77,23 +78,25 @@
     (catch Exception e
       (handle-error 500 "Failed to fetch missions" (.getMessage e)))))
 
-(defn get-mission [id]
+(defn get-mission
   "Get a specific mission by ID"
+  [id]
   (try
     (let [mission-id (Integer/parseInt id)]
       (if-let [mission (db/get-mission-by-id mission-id)]
         (response {:mission mission})
         (-> (response {:error "Mission not found"})
             (status 404))))
-    (catch NumberFormatException e
+    (catch NumberFormatException _e
       (-> (response {:error "Invalid mission ID"})
           (status 400)))
     (catch Exception e
       (-> (response {:error "Failed to fetch mission" :details (.getMessage e)})
           (status 500)))))
 
-(defn create-mission [request]
+(defn create-mission
   "Create a new mission (admin) or submit for approval (user)"
+  [request]
   (try
     (let [mission-data (:body request)
           token (extract-auth-token (:headers request))
@@ -117,8 +120,9 @@
     (catch Exception e
       (handle-error 500 "Failed to create mission" (.getMessage e)))))
 
-(defn update-mission [id request]
+(defn update-mission
   "Update an existing mission (admin) or submit update for approval (user)"
+  [id request]
   (try
     (let [mission-id (Integer/parseInt id)
           mission-data (:body request)
@@ -140,15 +144,16 @@
                 (status 201))))
         (-> (response {:error "Mission not found"})
             (status 404))))
-    (catch NumberFormatException e
+    (catch NumberFormatException _e
       (-> (response {:error "Invalid mission ID"})
           (status 400)))
     (catch Exception e
       (-> (response {:error "Failed to update mission" :details (.getMessage e)})
-          (status 500)))))
+          (status 500))))
 
-(defn delete-mission [id]
+(defn delete-mission
   "Delete a mission"
+  [id]
   (try
     (let [mission-id (Integer/parseInt id)]
       (if (db/get-mission-by-id mission-id)
@@ -164,8 +169,9 @@
       (-> (response {:error "Failed to delete mission" :details (.getMessage e)})
           (status 500)))))
 
-(defn get-comments [id]
+(defn get-comments
   "Get comments for a mission"
+  [id]
   (try
     (let [mission-id (Integer/parseInt id)]
       (if (db/get-mission-by-id mission-id)
@@ -177,8 +183,9 @@
       (-> (response {:error "Failed to fetch comments" :details (.getMessage e)})
           (status 500)))))
 
-(defn add-comment [id request]
+(defn add-comment
   "Add a comment to a mission"
+  [id request]
   (try
     (let [mission-id (Integer/parseInt id)
           comment-data (:body request)]
@@ -195,8 +202,9 @@
       (-> (response {:error "Failed to add comment" :details (.getMessage e)})
           (status 500)))))
 
-(defn get-reviews [id]
+(defn get-reviews
   "Get reviews for a mission"
+  [id]
   (try
     (let [mission-id (Integer/parseInt id)]
       (if (db/get-mission-by-id mission-id)
@@ -208,8 +216,9 @@
       (-> (response {:error "Failed to fetch reviews" :details (.getMessage e)})
           (status 500)))))
 
-(defn add-review [id request]
+(defn add-review
   "Add a review to a mission"
+  [id request]
   (try
     (let [mission-id (Integer/parseInt id)
           review-data (:body request)]
@@ -225,8 +234,9 @@
       (-> (response {:error "Failed to add review" :details (.getMessage e)})
           (status 500)))))
 
-(defn add-rating [id request]
+(defn add-rating
   "Add or update a thumbs up/down rating for a mission"
+  [id request]
   (try
     (let [mission-id (Integer/parseInt id)
           rating-data (:body request)]
@@ -244,8 +254,9 @@
       (-> (response {:error "Failed to add rating" :details (.getMessage e)})
           (status 500)))))
 
-(defn get-user-rating [id pilot-name]
+(defn get-user-rating
   "Get a user's rating for a mission"
+  [id pilot-name]
   (try
     (let [mission-id (Integer/parseInt id)]
       (if-let [rating (db/get-user-rating mission-id pilot-name)]
@@ -255,8 +266,9 @@
       (-> (response {:error "Failed to get rating" :details (.getMessage e)})
           (status 500)))))
 
-(defn get-completions [id]
+(defn get-completions
   "Get all completions for a mission"
+  [id]
   (try
     (let [mission-id (Integer/parseInt id)]
       (if (db/get-mission-by-id mission-id)
@@ -268,8 +280,9 @@
       (-> (response {:error "Failed to fetch completions" :details (.getMessage e)})
           (status 500)))))
 
-(defn mark-completed [id request]
+(defn mark-completed
   "Mark a mission as completed by a pilot"
+  [id request]
   (try
     (let [mission-id (Integer/parseInt id)
           completion-data (:body request)]
@@ -286,8 +299,9 @@
       (-> (response {:error "Failed to mark mission as completed" :details (.getMessage e)})
           (status 500)))))
 
-(defn get-submissions [request]
+(defn get-submissions
   "Get all mission submissions"
+  [request]
   (try
     (let [submissions (db/get-all-submissions)]
       (response {:submissions submissions}))
@@ -295,8 +309,9 @@
       (-> (response {:error "Failed to fetch submissions" :details (.getMessage e)})
           (status 500)))))
 
-(defn create-submission [request]
+(defn create-submission
   "Create a new mission submission"
+  [request]
   (try
     (let [submission-data (:body request)]
       (if (and (:title submission-data)
@@ -316,8 +331,9 @@
       (-> (response {:error "Failed to create submission" :details (.getMessage e)})
           (status 500)))))
 
-(defn approve-submission [id]
+(defn approve-submission
   "Approve a mission submission"
+  [id]
   (try
     (let [submission-id (Integer/parseInt id)]
       (db/approve-submission! submission-id)
@@ -326,8 +342,9 @@
       (-> (response {:error "Failed to approve submission" :details (.getMessage e)})
           (status 500)))))
 
-(defn reject-submission [id]
+(defn reject-submission
   "Reject a mission submission"
+  [id]
   (try
     (let [submission-id (Integer/parseInt id)]
       (db/reject-submission! submission-id "Rejected by admin")
@@ -337,29 +354,33 @@
           (status 500)))))
 
 ;; Admin authentication
-(defn admin-login [request]
+(defn admin-login
   "Simple admin login (in production, use proper authentication)"
+  [request]
   (try
     (let [credentials (:body request)
           admin-name (:admin_name credentials)
           password (:password credentials)]
-      ;; Simple hardcoded check - in production, use proper auth
-      (if (and (= admin-name "admin") (= password "aviation123"))
-        (let [token (db/create-admin-session! admin-name)]
-          (response {:token token :admin_name admin-name}))
-        (-> (response {:error "Invalid credentials"})
-            (status 401))))
+      ;; Use environment variables for admin credentials
+      (let [admin-user (or (System/getenv "ADMIN_USERNAME") "admin")
+            admin-pass (or (System/getenv "ADMIN_PASSWORD") "aviation123")]
+          (if (and (= admin-name admin-user) (= password admin-pass))
+            (let [token (db/create-admin-session! admin-name)]
+              (response {:token token :admin_name admin-name}))
+            (-> (response {:error "Invalid credentials"})
+                (status 401))))))
     (catch Exception e
       (-> (response {:error "Login failed" :details (.getMessage e)})
           (status 500)))))
 
-(defn check-admin-status [request]
+(defn check-admin-status
   "Check if current user is admin"
+  [request]
   (try
     (let [headers (:headers request)
           auth-header (or (get headers "authorization") (get headers "Authorization"))
           token (when auth-header 
-                  (if (.startsWith auth-header "Bearer ")
+                  (if (.startsWith ^String auth-header "Bearer ")
                     (subs auth-header 7)
                     auth-header))
           is-admin (and token (not (empty? token)) (db/validate-admin-session token))]
@@ -371,8 +392,9 @@
           (status 500)))))
 
 ;; Mission update approval handlers
-(defn get-mission-updates [request]
+(defn get-mission-updates
   "Get all pending mission updates"
+  [request]
   (try
     (let [updates (db/get-all-mission-updates)]
       (response {:updates updates}))
@@ -380,8 +402,9 @@
       (-> (response {:error "Failed to fetch updates" :details (.getMessage e)})
           (status 500)))))
 
-(defn approve-mission-update [id]
+(defn approve-mission-update
   "Approve a mission update"
+  [id]
   (try
     (let [update-id (Integer/parseInt id)]
       (db/approve-mission-update! update-id)
@@ -390,8 +413,9 @@
       (-> (response {:error "Failed to approve update" :details (.getMessage e)})
           (status 500)))))
 
-(defn reject-mission-update [id]
+(defn reject-mission-update
   "Reject a mission update"
+  [id]
   (try
     (let [update-id (Integer/parseInt id)]
       (db/reject-mission-update! update-id "Rejected by admin")
@@ -401,8 +425,9 @@
           (status 500)))))
 
 ;; JSON Import/Export handlers
-(defn export-missions [request]
+(defn export-missions
   "Export all missions as JSON"
+  [request]
   (try
     (let [missions (db/export-all-missions)]
       (response {:missions missions}))
@@ -410,8 +435,9 @@
       (-> (response {:error "Failed to export missions" :details (.getMessage e)})
           (status 500)))))
 
-(defn export-missions-yaml [request]
+(defn export-missions-yaml
   "Export all missions as structured YAML following the schema"
+  [request]
   (try
     (let [missions (db/export-all-missions)
           ;; Structure the data according to the schema with proper metadata
@@ -451,8 +477,9 @@
       (-> (response {:error "Failed to export missions as YAML" :details (.getMessage e)})
           (status 500)))))
 
-(defn import-missions [request]
+(defn import-missions
   "Import missions from JSON"
+  [request]
   (try
     (let [import-data (:body request)
           missions (:missions import-data)]
@@ -466,8 +493,9 @@
       (-> (response {:error "Failed to import missions" :details (.getMessage e)})
           (status 500)))))
 
-(defn import-missions-yaml [request]
+(defn import-missions-yaml
   "Import missions from YAML file"
+  [request]
   (try
     (let [yaml-content (:body request)
           parsed-data (yaml/parse-string yaml-content)
