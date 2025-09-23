@@ -24,6 +24,31 @@
    :accent-purple "#9c27b0"   ; Special
    :accent-cyan "#00bcd4"})   ; Info
 
+;; Light mode color palette - clean and professional
+(def light-colors
+  {:bg-primary "#ffffff"      ; Main background
+   :bg-secondary "#f8f9fa"    ; Card backgrounds
+   :bg-tertiary "#e9ecef"     ; Headers, footers
+   :bg-quaternary "#dee2e6"   ; Elevated elements
+   :separator "#ced4da"       ; All borders and separators
+   :text-primary "#212529"    ; Main text
+   :text-secondary "#495057"  ; Secondary text
+   :text-muted "#6c757d"      ; Muted text
+   :accent-blue "#0d6efd"     ; Primary actions
+   :accent-green "#198754"    ; Success/complete
+   :accent-orange "#fd7e14"   ; Warning/rate
+   :accent-red "#dc3545"      ; Error/danger
+   :accent-purple "#6f42c1"   ; Special
+   :accent-cyan "#0dcaf0"})   ; Info
+
+;; Get current color scheme
+(defn current-colors []
+  (if (:dark-mode? @app-state) dark-colors light-colors))
+
+;; Toggle dark/light mode
+(defn toggle-theme []
+  (swap! app-state update :dark-mode? not))
+
 ;; Global state
 (defonce app-state (r/atom {:current-page :missions
                            :missions []
@@ -38,6 +63,7 @@
                            :mission-rate-open false
                            :selected-mission nil
                            :user-rating 0
+                           :dark-mode? true
                            :login-credentials {:username "" :password ""}
                            :submission-form {:title ""
                                            :category "General Training"
@@ -248,6 +274,19 @@
           (js/URL.revokeObjectURL url))
         (js/alert "Failed to download missions. Please try again.")))))
 
+(defn upload-missions-yaml [file]
+  (go
+    (let [form-data (js/FormData.)
+          _ (.append form-data "file" file)
+          response (<! (http/post (str config/api-base-url "/missions/import/yaml")
+                                  {:body form-data
+                                   :headers {"Authorization" (str "Bearer " (.getItem js/localStorage "admin-token"))}}))]
+      (if (= 200 (:status response))
+        (do
+          (js/alert (str "Successfully imported " (:imported_count (:body response)) " missions!"))
+          (fetch-missions)) ; Refresh missions list
+        (js/alert (str "Failed to upload missions: " (get-in response [:body :error])))))))
+
 ;; Mission field configuration - schema-driven UI with dark theme colors
 (def mission-field-config
   "Configuration for mission fields with display properties - dark theme"
@@ -259,29 +298,31 @@
 
 (defn render-mission-field [mission field-config]
   "Render a mission field only if it has content as a table row"
-  (let [{:keys [key label color required]} field-config
+  (let [colors (current-colors)
+        {:keys [key label color required]} field-config
         value (get mission key)]
     (when (and value (not (str/blank? (str value))))
       [:tr.mission-field {:key (name key)}
        [:td.mission-data-label {:style {:color color :font-weight "bold" :padding "6px 8px 6px 8px" :vertical-align "top" :white-space "nowrap"}} (str label ":")]
-       [:td.mission-data-value {:style {:color "#ffffff" :padding "6px 8px" :word-wrap "break-word"}} value]])))
+       [:td.mission-data-value {:style {:color (:text-primary colors) :padding "6px 8px" :word-wrap "break-word"}} value]])))
 
 ;; UI Components
 (defn mission-card [mission]
-  (let [challenges (analyze-mission-challenges mission)
+  (let [colors (current-colors)
+        challenges (analyze-mission-challenges mission)
         difficulty (:difficulty mission)]
-    [:div.mission-card {:style {:background-color (:bg-secondary dark-colors) :border (str "1px solid " (:separator dark-colors)) :border-radius "8px" :color (:text-secondary dark-colors)}}
-     [:div.mission-header {:style {:background-color (:bg-tertiary dark-colors) :padding "12px" :border-radius "8px 8px 0 0" :border-bottom (str "1px solid " (:separator dark-colors))}}
-      [:div.mission-title {:style {:color (:text-primary dark-colors) :font-size "1.1rem" :font-weight "bold" :margin-bottom "8px"}} (:title mission)]
+    [:div.mission-card {:style {:background-color (:bg-secondary colors) :border (str "1px solid " (:separator colors)) :border-radius "8px" :color (:text-secondary colors)}}
+     [:div.mission-header {:style {:background-color (:bg-tertiary colors) :padding "12px" :border-radius "8px 8px 0 0" :border-bottom (str "1px solid " (:separator colors))}}
+      [:div.mission-title {:style {:color (:text-primary colors) :font-size "1.1rem" :font-weight "bold" :margin-bottom "8px"}} (:title mission)]
       [:div.mission-meta {:style {:display "flex" :gap "8px" :flex-wrap "wrap"}}
-       [:span.category-badge {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-green dark-colors) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}} (:category mission)]
-       [:span.difficulty-badge {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-orange dark-colors) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}}
+       [:span.category-badge {:style {:background-color (:bg-quaternary colors) :color (:accent-green colors) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}} (:category mission)]
+       [:span.difficulty-badge {:style {:background-color (:bg-quaternary colors) :color (:accent-orange colors) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}}
         (str "DIFF: " difficulty "/10")]
-       [:span.experience-badge {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-blue dark-colors) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}} (str "EXP: " (:pilot_experience mission))]]]
+       [:span.experience-badge {:style {:background-color (:bg-quaternary colors) :color (:accent-blue colors) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold"}} (str "EXP: " (:pilot_experience mission))]]]
      
      [:div.mission-content {:style {:padding "12px"}}
       ;; Schema-driven field rendering - only shows fields that exist
-      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0" :background-color (:bg-primary dark-colors) :border (str "1px solid " (:separator dark-colors)) :border-radius "4px"}}
+      [:table.mission-data-table {:style {:width "100%" :border-collapse "collapse" :margin "8px 0" :background-color (:bg-primary colors) :border (str "1px solid " (:separator colors)) :border-radius "4px"}}
        [:tbody
         (for [field-config mission-field-config]
           ^{:key (:key field-config)}
@@ -289,66 +330,77 @@
       
       ;; Mission description section
       [:div.mission-section
-       [:h4 {:style {:color (:accent-blue dark-colors) :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "DESCRIPTION"]
-       [:p {:style {:color (:text-primary dark-colors) :line-height "1.4" :margin "0" :border-left (str "3px solid " (:accent-blue dark-colors)) :padding "8px" :border-radius "4px" :background-color (:bg-primary dark-colors) :border (str "1px solid " (:separator dark-colors))}} 
+       [:h4 {:style {:color (:accent-blue colors) :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "DESCRIPTION"]
+       [:p {:style {:color (:text-primary colors) :line-height "1.4" :margin "0" :border-left (str "3px solid " (:accent-blue colors)) :padding "8px" :border-radius "4px" :background-color (:bg-primary colors) :border (str "1px solid " (:separator colors))}} 
         (:mission_description mission)]]
       
       ;; Why section
       (when (:why_description mission)
         [:div.mission-section
-         [:h4 {:style {:color (:accent-green dark-colors) :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "WHY THIS MISSION"]
-         [:p {:style {:color (:text-primary dark-colors) :line-height "1.4" :margin "0" :border-left (str "3px solid " (:accent-green dark-colors)) :padding "8px" :border-radius "4px" :background-color (:bg-primary dark-colors) :border (str "1px solid " (:separator dark-colors))}} 
+         [:h4 {:style {:color (:accent-green colors) :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "WHY THIS MISSION"]
+         [:p {:style {:color (:text-primary colors) :line-height "1.4" :margin "0" :border-left (str "3px solid " (:accent-green colors)) :padding "8px" :border-radius "4px" :background-color (:bg-primary colors) :border (str "1px solid " (:separator colors))}} 
           (:why_description mission)]])
       
       ;; Flight challenges
       (when (seq challenges)
         [:div.challenges-section
-         [:h4 {:style {:color (:accent-orange dark-colors) :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "FLIGHT CHALLENGES"]
+         [:h4 {:style {:color (:accent-orange colors) :margin "12px 0 6px 0" :font-size "0.85rem" :font-weight "bold"}} "FLIGHT CHALLENGES"]
          [:div.challenges-grid {:style {:display "flex" :flex-wrap "wrap" :gap "8px" :margin-top "8px"}}
           (for [challenge challenges]
             ^{:key (:label challenge)}
-            [:div.challenge-item {:style {:background-color (:bg-quaternary dark-colors) :border (str "1px solid " (:separator dark-colors)) :color (:accent-orange dark-colors) :padding "6px 10px" :border-radius "4px" :display "flex" :align-items "center" :gap "6px"}}
+            [:div.challenge-item {:style {:background-color (:bg-quaternary colors) :border (str "1px solid " (:separator colors)) :color (:accent-orange colors) :padding "6px 10px" :border-radius "4px" :display "flex" :align-items "center" :gap "6px"}}
              [:span.challenge-icon (:icon challenge)]
              [:span.challenge-label (:label challenge)]])]])]
      
-     [:div.mission-footer {:style {:background-color (:bg-tertiary dark-colors) :padding "12px" :border-radius "0 0 8px 8px" :border-top (str "1px solid " (:separator dark-colors)) :display "flex" :justify-content "space-between" :align-items "center"}}
-      [:div.pilot-experience {:style {:color (:accent-purple dark-colors) :font-weight "bold" :font-size "0.85rem"}} 
+     [:div.mission-footer {:style {:background-color (:bg-tertiary colors) :padding "12px" :border-radius "0 0 8px 8px" :border-top (str "1px solid " (:separator colors)) :display "flex" :justify-content "space-between" :align-items "center"}}
+      [:div.pilot-experience {:style {:color (:accent-purple colors) :font-weight "bold" :font-size "0.85rem"}} 
        (str "PILOT LEVEL: " (:pilot_experience mission))]
       [:div.mission-actions {:style {:display "flex" :gap "8px"}}
        [:button.btn-mission.primary 
-        {:style {:background-color (:accent-blue dark-colors) :color (:text-primary dark-colors) :border "none" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+        {:style {:background-color (:accent-blue colors) :color (:text-primary colors) :border "none" :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
          :on-click #(do (swap! app-state assoc :selected-mission mission :mission-brief-open true))} 
         "📋 BRIEF"]
        [:button.btn-mission 
-        {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-green dark-colors) :border (str "1px solid " (:separator dark-colors)) :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+        {:style {:background-color (:bg-quaternary colors) :color (:accent-green colors) :border (str "1px solid " (:separator colors)) :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
          :on-click #(complete-mission (:id mission))} 
         "✅ COMPLETE"]
        [:button.btn-mission 
-        {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-orange dark-colors) :border (str "1px solid " (:separator dark-colors)) :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+        {:style {:background-color (:bg-quaternary colors) :color (:accent-orange colors) :border (str "1px solid " (:separator colors)) :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
          :on-click #(do (swap! app-state assoc :selected-mission mission :mission-rate-open true :user-rating 0))} 
-        "⭐ RATE"]]]]))
+        "⭐ RATE"]]
 
 (defn admin-login-dialog []
   [:div.modal {:class (when (:login-dialog-open @app-state) "modal-open")}
    [:div.modal-backdrop {:on-click #(swap! app-state assoc :login-dialog-open false)}]
-   [:div.modal-content
-    [:div.modal-header
-     [:h2 "🔐 Admin Login"]
-     [:button.modal-close {:on-click #(swap! app-state assoc :login-dialog-open false)} "×"]]
-    [:div.modal-body
-     [:div.form-group
-      [:label "Username:"]
+   [:div.modal-content {:style {:background-color "#2d2d2d" :color "#e0e0e0"}}
+    [:div.modal-header {:style {:background-color "#3d3d3d" :border-bottom "1px solid #555"}}
+     [:h2 {:style {:color "#ffffff"}} "🔐 Admin Login"]
+     [:button.modal-close {:style {:color "#ffffff"} :on-click #(swap! app-state assoc :login-dialog-open false)} "×"]]
+    [:div.modal-body {:style {:padding "20px"}}
+     ;; Admin credentials info
+     [:div.admin-info {:style {:background-color "#1e3a5f" :border "1px solid #3d5a80" :border-radius "4px" :padding "15px" :margin-bottom "20px"}}
+      [:h3 {:style {:color "#64b5f6" :margin "0 0 10px 0" :font-size "1rem"}} "🔑 Admin Credentials (Open Access)"]
+      [:p {:style {:margin "5px 0" :font-size "0.9rem"}} [:strong {:style {:color "#81c784"}} "Username:"] " admin"]
+      [:p {:style {:margin "5px 0" :font-size "0.9rem"}} [:strong {:style {:color "#81c784"}} "Password:"] " aviation123"]
+      [:p {:style {:margin "10px 0 0 0" :font-size "0.8rem" :color "#b0b0b0"}} "Note: This is a temporary open access system. Proper authentication will be implemented later."]]
+     
+     [:div.form-group {:style {:margin-bottom "20px"}}
+      [:label {:style {:display "block" :color "#81c784" :font-weight "bold" :margin-bottom "5px"}} "Username:"]
       [:input {:type "text"
                :value (get-in @app-state [:login-credentials :username])
+               :placeholder "admin"
+               :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
                :on-change #(swap! app-state assoc-in [:login-credentials :username] (.. % -target -value))}]]
-     [:div.form-group
-      [:label "Password:"]
+     [:div.form-group {:style {:margin-bottom "20px"}}
+      [:label {:style {:display "block" :color "#81c784" :font-weight "bold" :margin-bottom "5px"}} "Password:"]
       [:input {:type "password"
                :value (get-in @app-state [:login-credentials :password])
+               :placeholder "aviation123"
+               :style {:width "100%" :padding "10px" :background-color "#333" :color "#fff" :border "1px solid #555" :border-radius "4px"}
                :on-change #(swap! app-state assoc-in [:login-credentials :password] (.. % -target -value))}]]]
-    [:div.modal-footer
-     [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :login-dialog-open false)} "Cancel"]
-     [:button.btn.btn-primary {:on-click #(admin-login (:login-credentials @app-state))} "Login"]]]])
+    [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
+     [:button.btn.btn-secondary {:style {:background-color "#666" :color "#fff"} :on-click #(swap! app-state assoc :login-dialog-open false)} "Cancel"]
+     [:button.btn.btn-primary {:style {:background-color "#4caf50" :color "#000"} :on-click #(admin-login (:login-credentials @app-state))} "Login"]]]
 
 (defn create-mission-dialog []
   [:div.modal {:class (when (:create-dialog-open @app-state) "modal-open")}
@@ -361,7 +413,7 @@
      [:p "Mission creation form would go here..."]]
     [:div.modal-footer
      [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :create-dialog-open false)} "Cancel"]
-     [:button.btn.btn-primary "Create Mission"]]]])
+     [:button.btn.btn-primary "Create Mission"]]]
 
 (defn mission-brief-dialog []
   (let [mission (:selected-mission @app-state)]
@@ -388,7 +440,7 @@
          [:div.brief-section
           [:h3 {:style {:color "#ffb74d" :margin-bottom "10px"}} "Why This Mission"]
           [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
-           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]])
+           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]
        
        (when (:route mission)
          [:div.brief-section
@@ -402,11 +454,11 @@
          [:div.brief-section
           [:h3 {:style {:color "#ba68c8" :margin-bottom "10px"}} "Additional Notes"]
           [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px"}}
-           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]])]
+           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]]
       
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-brief-open false)} "Close Brief"]
-       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]]]))
+       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]
 
 (defn mission-rate-dialog []
   (let [mission (:selected-mission @app-state)
@@ -430,7 +482,7 @@
        [:p {:style {:color "#999" :font-size "0.9rem"}} (str "Selected rating: " current-rating "/5")]]
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-rate-open false :user-rating 0)} "Cancel"]
-       [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]]]))
+       [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]
 
 (defn mission-submit-dialog []
   (let [form (:submission-form @app-state)]
@@ -554,111 +606,125 @@
                                             (str/blank? (:objective form))
                                             (str/blank? (:mission_description form))
                                             (str/blank? (:why_description form)))
-                                :on-click #(submit-mission form)} "Submit Mission"]]]))
+                                :on-click #(submit-mission form)} "Submit Mission"]]
 
 (defn filter-dropdown [label options current-value filter-key]
-  [:div.filter-dropdown {:style {:display "flex" :flex-direction "column" :gap "4px"}}
-   [:label {:style {:color "#e0e0e0" :font-size "0.8rem" :font-weight "bold"}} label]
-   [:select {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666" :padding "6px 8px" :border-radius "4px" :font-size "0.85rem" :cursor "pointer"}
-             :value current-value
-             :on-change #(do
-                          (swap! app-state assoc-in [:filters filter-key] (.. % -target -value))
-                          (update-filtered-missions))}
-    (for [option options]
-      ^{:key option}
-      [:option {:value option} option])]])
+  (let [colors (current-colors)]
+    [:div.filter-dropdown {:style {:display "flex" :flex-direction "column" :gap "4px"}}
+     [:label {:style {:color (:text-secondary colors) :font-size "0.8rem" :font-weight "bold"}} label]
+     [:select {:style {:background-color (:bg-quaternary colors) :color (:text-primary colors) :border (str "1px solid " (:separator colors)) :padding "6px 8px" :border-radius "4px" :font-size "0.85rem" :cursor "pointer"}
+               :value current-value
+               :on-change #(do
+                            (swap! app-state assoc-in [:filters filter-key] (.. % -target -value))
+                            (update-filtered-missions))}
+      (for [option options]
+        ^{:key option}
+        [:option {:value option} option])]]))
 
 (defn search-input []
-  [:div.search-input {:style {:display "flex" :flex-direction "column" :gap "4px"}}
-   [:label {:style {:color "#e0e0e0" :font-size "0.8rem" :font-weight "bold"}} "Search Missions"]
-   [:input {:type "text"
-            :placeholder "Search by title, objective, description..."
-            :style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666" :padding "6px 8px" :border-radius "4px" :font-size "0.85rem"}
-            :value (get-in @app-state [:filters :search-text])
-            :on-change #(do
-                         (swap! app-state assoc-in [:filters :search-text] (.. % -target -value))
-                         (update-filtered-missions))}]])
+  (let [colors (current-colors)]
+    [:div.search-input {:style {:display "flex" :flex-direction "column" :gap "4px"}}
+     [:label {:style {:color (:text-secondary colors) :font-size "0.8rem" :font-weight "bold"}} "Search Missions"]
+     [:input {:type "text"
+              :placeholder "Search by title, objective, description..."
+              :style {:background-color (:bg-quaternary colors) :color (:text-primary colors) :border (str "1px solid " (:separator colors)) :padding "6px 8px" :border-radius "4px" :font-size "0.85rem"}
+              :value (get-in @app-state [:filters :search-text])
+              :on-change #(do
+                           (swap! app-state assoc-in [:filters :search-text] (.. % -target -value))
+                           (update-filtered-missions))}]]))
 
 (defn mission-filters []
-  (let [filters (:filters @app-state)]
-    [:div.mission-filters {:style {:background-color (:bg-secondary dark-colors) :border (str "1px solid " (:separator dark-colors)) :border-radius "8px" :padding "16px" :margin-bottom "20px"}}
+  (let [colors (current-colors)
+        filters (:filters @app-state)]
+    [:div.mission-filters {:style {:background-color (:bg-secondary colors) :border (str "1px solid " (:separator colors)) :border-radius "8px" :padding "16px" :margin-bottom "20px"}}
      [:div.filters-header {:style {:margin-bottom "12px"}}
-      [:h3 {:style {:color (:text-primary dark-colors) :margin "0" :font-size "1rem" :font-weight "bold"}} "🔍 Filter Missions"]]
+      [:h3 {:style {:color (:text-primary colors) :margin "0" :font-size "1rem" :font-weight "bold"}} "🔍 Filter Missions"]]
      [:div.filters-grid {:style {:display "grid" :grid-template-columns "repeat(auto-fit, minmax(200px, 1fr))" :gap "16px" :align-items "end"}}
       [filter-dropdown "Category" category-options (:category filters) :category]
       [filter-dropdown "Difficulty" difficulty-options (:difficulty filters) :difficulty]
       [filter-dropdown "Experience Level" experience-options (:experience filters) :experience]
       [search-input]]
-     [:div.filter-summary {:style {:margin-top "12px" :padding-top "12px" :border-top (str "1px solid " (:separator dark-colors)) :display "flex" :justify-content "space-between" :align-items "center"}}
-      [:span {:style {:color (:accent-green dark-colors) :font-size "0.85rem" :font-weight "bold"}}
+     [:div.filter-summary {:style {:margin-top "12px" :padding-top "12px" :border-top (str "1px solid " (:separator colors)) :display "flex" :justify-content "space-between" :align-items "center"}}
+      [:span {:style {:color (:accent-green colors) :font-size "0.85rem" :font-weight "bold"}}
        (str "Showing " (count (:filtered-missions @app-state)) " of " (count (:missions @app-state)) " missions")]
-      [:button {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-orange dark-colors) :border (str "1px solid " (:separator dark-colors)) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :cursor "pointer"}
+      [:button {:style {:background-color (:bg-quaternary colors) :color (:accent-orange colors) :border (str "1px solid " (:separator colors)) :padding "4px 8px" :border-radius "4px" :font-size "0.8rem" :cursor "pointer"}
                 :on-click #(do
                             (swap! app-state assoc :filters {:category "All Categories"
                                                              :difficulty "All Difficulties"
                                                              :experience "All Experience Levels"
                                                              :search-text ""})
                             (update-filtered-missions))}
-       "Clear Filters"]]]))
+       "Clear Filters"]]
 
 (defn navigation []
-  [:header.app-header {:style {:background-color (:bg-tertiary dark-colors) :border-bottom (str "1px solid " (:separator dark-colors)) :padding "16px 0"}}
-   [:div.container {:style {:max-width "1200px" :margin "0 auto" :padding "0 20px"}}
-    [:div {:style {:display "flex" :justify-content "space-between" :align-items "center"}}
-     [:h1.app-title {:style {:color (:text-primary dark-colors) :margin "0" :font-size "1.5rem"}} "✈️ Aviation Mission Management"]
-     [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
-      (if (:admin? @app-state)
-        [:span {:style {:color (:accent-green dark-colors) :font-weight "bold" :background-color (:bg-quaternary dark-colors) :padding "8px 12px" :border-radius "4px" :border (str "1px solid " (:separator dark-colors))}} "👨‍💼 ADMIN MODE"]
-        [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
-         [:button.btn.btn-primary {:style {:background-color (:accent-green dark-colors) :color (:text-primary dark-colors) :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :submit-dialog-open true)} 
-          "📝 Submit Mission"]
-         [:button.btn.btn-info {:style {:background-color (:accent-orange dark-colors) :color (:text-primary dark-colors) :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(download-missions-yaml)} 
-          "📥 Download"]
-         [:button.btn.btn-secondary {:style {:background-color (:bg-quaternary dark-colors) :color (:accent-blue dark-colors) :border (str "1px solid " (:separator dark-colors)) :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :login-dialog-open true)} 
-          "🔐 Admin Login"]])]]]])
+  (let [colors (current-colors)]
+    [:header.app-header {:style {:background-color (:bg-tertiary colors) :border-bottom (str "1px solid " (:separator colors)) :padding "16px 0"}}
+     [:div.container {:style {:max-width "1200px" :margin "0 auto" :padding "0 20px"}}
+      [:div {:style {:display "flex" :justify-content "space-between" :align-items "center"}}
+       [:h1.app-title {:style {:color (:text-primary colors) :margin "0" :font-size "1.5rem"}} "✈️ Aviation Mission Management"]
+       [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
+        ;; Theme toggle button
+        [:button.theme-toggle {:style {:background-color (:bg-quaternary colors) :color (:text-primary colors) :border (str "1px solid " (:separator colors)) :padding "8px 12px" :border-radius "4px" :font-weight "bold" :cursor "pointer" :font-size "1.2rem"}
+                               :on-click toggle-theme}
+         (if (:dark-mode? @app-state) "☀️" "🌙")]
+        
+        (if (:admin? @app-state)
+          [:span {:style {:color (:accent-green colors) :font-weight "bold" :background-color (:bg-quaternary colors) :padding "8px 12px" :border-radius "4px" :border (str "1px solid " (:separator colors))}} "👨‍💼 ADMIN MODE"]
+          [:div {:style {:display "flex" :gap "1rem" :align-items "center"}}
+           [:button.btn.btn-primary {:style {:background-color (:accent-green colors) :color (:text-primary colors) :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :submit-dialog-open true)} 
+            "📝 Submit Mission"]
+           [:button.btn.btn-info {:style {:background-color (:accent-orange colors) :color (:text-primary colors) :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(download-missions-yaml)} 
+            "📥 Download"]
+           [:label {:style {:background-color (:accent-blue colors) :color (:text-primary colors) :border "none" :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer" :display "inline-block"}}
+            "📤 Upload YAML"
+            [:input {:type "file"
+                     :accept ".yaml,.yml"
+                     :style {:display "none"}
+                     :on-change #(when-let [file (-> % .-target .-files (aget 0))]
+                                  (upload-missions-yaml file))}]]
+           [:button.btn.btn-secondary {:style {:background-color (:bg-quaternary colors) :color (:accent-blue colors) :border (str "1px solid " (:separator colors)) :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :login-dialog-open true)} 
+            "🔐 Admin Login"]]
 
 (defn missions-page []
-  [:div.missions-page {:style {:background-color (:bg-primary dark-colors) :min-height "100vh" :padding "20px 0"}}
-   [:div.container {:style {:max-width "1200px" :margin "0 auto" :padding "0 20px"}}
-    [:div.page-header {:style {:margin-bottom "24px"}}
-     [:h1 {:style {:color (:text-primary dark-colors) :margin "0 0 16px 0" :font-size "1.8rem"}} "🎯 Aviation Training Missions"]
-     (when (:admin? @app-state)
-       [:div
-        [:button.btn.btn-primary {:style {:background-color (:accent-blue dark-colors) :color (:text-primary dark-colors) :border "none" :padding "10px 20px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :create-dialog-open true)} 
-         "➕ Create Mission"]])]
+  (let [colors (current-colors)]
+    [:div.missions-page {:style {:background-color (:bg-primary colors) :min-height "100vh" :padding "20px 0"}}
+     [:div.container {:style {:max-width "1200px" :margin "0 auto" :padding "0 20px"}}
+      [:div.page-header {:style {:margin-bottom "24px"}}
+       [:h1 {:style {:color (:text-primary colors) :margin "0 0 16px 0" :font-size "1.8rem"}} "🎯 Aviation Training Missions"]
+       (when (:admin? @app-state)
+         [:div
+          [:button.btn.btn-primary {:style {:background-color (:accent-blue colors) :color (:text-primary colors) :border "none" :padding "10px 20px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :create-dialog-open true)} 
+           "➕ Create Mission"]])]
 
-    [mission-filters]
+      [mission-filters]
 
-    (if (:loading @app-state)
-      [:div.loading {:style {:color (:text-secondary dark-colors) :text-align "center" :padding "40px" :font-size "1.2rem"}} "🔄 Loading missions..."]
-      (let [missions-to-show (:filtered-missions @app-state)]
-        (if (empty? missions-to-show)
-          [:div.no-missions {:style {:color (:text-secondary dark-colors) :text-align "center" :padding "40px" :font-size "1.2rem"}}
-           [:div {:style {:font-size "3rem" :margin-bottom "16px"}} "🔍"]
-           [:div "No missions match your current filters"]
-           [:div {:style {:font-size "0.9rem" :color (:text-muted dark-colors) :margin-top "8px"}} "Try adjusting your filter criteria"]]
-          [:div.missions-grid {:style {:display "grid" :grid-template-columns "repeat(auto-fit, minmax(400px, 1fr))" :gap "20px"}}
-           (for [mission missions-to-show]
-             ^{:key (:id mission)}
-             [mission-card mission])])))]])
-
-(defn floating-action-button []
-  (when (:admin? @app-state)
-    [:button.fab {:on-click #(swap! app-state assoc :create-dialog-open true)}
+      (if (:loading @app-state)
+        [:div.loading {:style {:color (:text-secondary colors) :text-align "center" :padding "40px" :font-size "1.2rem"}} "🔄 Loading missions..."]
+        (let [missions-to-show (:filtered-missions @app-state)]
+          (if (empty? missions-to-show)
+            [:div.no-missions {:style {:color (:text-secondary colors) :text-align "center" :padding "40px" :font-size "1.2rem"}}
+             [:div {:style {:font-size "3rem" :margin-bottom "16px"}} "🔍"]
+             [:div "No missions match your current filters"]
+             [:div {:style {:font-size "0.9rem" :color (:text-muted colors) :margin-top "8px"}} "Try adjusting your filter criteria"]]
+            [:div.missions-grid {:style {:display "grid" :grid-template-columns "repeat(auto-fit, minmax(400px, 1fr))" :gap "20px"}}
+             (for [mission missions-to-show]
+               ^{:key (:id mission)}
+               [mission-card mission])])))]
      [:div.fab-icon "➕"]
      [:div.fab-label "CREATE MISSION"]]))
 
 (defn app []
-  [:div.app {:style {:background-color "#1a1a1a" :min-height "100vh" :color "#e0e0e0"}}
-   [navigation]
-   [:main.main-content
-    [missions-page]]
-   [admin-login-dialog]
-   [create-mission-dialog]
-   [mission-brief-dialog]
-   [mission-rate-dialog]
-   [mission-submit-dialog]
-   [floating-action-button]])
+  (let [colors (current-colors)]
+    [:div.app {:style {:background-color (:bg-primary colors) :min-height "100vh" :color (:text-primary colors)}}
+     [navigation]
+     [:main.main-content
+      [missions-page]]
+     [admin-login-dialog]
+     [create-mission-dialog]
+     [mission-brief-dialog]
+     [mission-rate-dialog]
+     [mission-submit-dialog]
+     [floating-action-button]]))
 
 ;; Initialization
 (defn ^:dev/after-load mount-root []
@@ -673,4 +739,4 @@
   
   (mount-root)
   (check-admin-status)
-  (fetch-missions))
+  (fetch-missions)))

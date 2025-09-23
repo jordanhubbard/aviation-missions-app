@@ -411,11 +411,39 @@
           (status 500)))))
 
 (defn export-missions-yaml [request]
-  "Export all missions as YAML"
+  "Export all missions as structured YAML following the schema"
   (try
     (let [missions (db/export-all-missions)
-          yaml-content (yaml/generate-string {:missions missions})]
-      (-> (response yaml-content)
+          ;; Structure the data according to the schema with proper metadata
+          structured-data {:aviation_missions
+                          {:version "1.0"
+                           :exported_at (str (java.time.Instant/now))
+                           :total_missions (count missions)
+                           :schema_version "1.0"
+                           :missions (mapv (fn [mission]
+                                            ;; Ensure all required fields are present and properly formatted
+                                            (merge {:id (:id mission)
+                                                   :title (:title mission)
+                                                   :category (:category mission)
+                                                   :difficulty (:difficulty mission)
+                                                   :objective (:objective mission)
+                                                   :mission_description (:mission_description mission)
+                                                   :why_description (:why_description mission)
+                                                   :created_at (str (:created_at mission))
+                                                   :updated_at (str (:updated_at mission))}
+                                                   ;; Add optional fields only if they have values
+                                                   (when (:notes mission) {:notes (:notes mission)})
+                                                   (when (:route mission) {:route (:route mission)})
+                                                   (when (:suggested_route mission) {:suggested_route (:suggested_route mission)})
+                                                   (when (:pilot_experience mission) {:pilot_experience (:pilot_experience mission)})
+                                                   (when (:special_challenges mission) {:special_challenges (:special_challenges mission)})
+                                                   ;; Add computed fields
+                                                   {:comment_count (or (:comment_count mission) 0)
+                                                    :completion_count (or (:completion_count mission) 0)
+                                                    :thumbs_up (or (:thumbs_up mission) 0)
+                                                    :thumbs_down (or (:thumbs_down mission) 0)}))
+                                          missions)}}]
+      (-> (response (yaml/generate-string structured-data {:dumper-options {:flow-style :block}}))
           (assoc-in [:headers "Content-Type"] "application/x-yaml")
           (assoc-in [:headers "Content-Disposition"] "attachment; filename=\"aviation-missions.yaml\"")))
     (catch Exception e
@@ -436,4 +464,22 @@
             (status 400))))
     (catch Exception e
       (-> (response {:error "Failed to import missions" :details (.getMessage e)})
+          (status 500)))))
+
+(defn import-missions-yaml [request]
+  "Import missions from YAML file"
+  (try
+    (let [yaml-content (:body request)
+          parsed-data (yaml/parse-string yaml-content)
+          missions (get-in parsed-data [:aviation_missions :missions])]
+      (if (and missions (vector? missions))
+        (let [imported-count (db/import-missions! missions)]
+          (response {:message (str "Successfully imported " imported-count " missions from YAML")
+                    :imported_count imported-count
+                    :total_in_file (count missions)}))
+        (-> (response {:error "Invalid YAML format. Expected aviation_missions.missions array"})
+            (status 400))))
+    (catch Exception e
+      (log/error e "Failed to parse YAML import")
+      (-> (response {:error "Failed to import missions from YAML" :details (.getMessage e)})
           (status 500)))))

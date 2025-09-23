@@ -66,6 +66,7 @@
   (GET "/missions/export" request ((handlers/admin-required handlers/export-missions) request))
   (GET "/missions/export/yaml" request (handlers/export-missions-yaml request))
   (POST "/missions/import" request ((handlers/admin-required handlers/import-missions) request))
+  (POST "/missions/import/yaml" request ((handlers/admin-required handlers/import-missions-yaml) request))
   
   (GET "/missions/:id" [id] (handlers/get-mission id))
   (POST "/missions" request (handlers/create-mission request))
