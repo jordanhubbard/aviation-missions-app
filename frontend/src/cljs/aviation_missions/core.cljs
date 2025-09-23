@@ -367,7 +367,7 @@
        [:button.btn-mission 
         {:style {:background-color (:bg-quaternary colors) :color (:accent-orange colors) :border (str "1px solid " (:separator colors)) :padding "6px 12px" :border-radius "4px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
          :on-click #(do (swap! app-state assoc :selected-mission mission :mission-rate-open true :user-rating 0))} 
-        "⭐ RATE"]]
+        "⭐ RATE"]]))
 
 (defn admin-login-dialog []
   [:div.modal {:class (when (:login-dialog-open @app-state) "modal-open")}
@@ -400,7 +400,7 @@
                :on-change #(swap! app-state assoc-in [:login-credentials :password] (.. % -target -value))}]]]
     [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
      [:button.btn.btn-secondary {:style {:background-color "#666" :color "#fff"} :on-click #(swap! app-state assoc :login-dialog-open false)} "Cancel"]
-     [:button.btn.btn-primary {:style {:background-color "#4caf50" :color "#000"} :on-click #(admin-login (:login-credentials @app-state))} "Login"]]]
+     [:button.btn.btn-primary {:style {:background-color "#4caf50" :color "#000"} :on-click #(admin-login (:login-credentials @app-state))} "Login"]]])
 
 (defn create-mission-dialog []
   [:div.modal {:class (when (:create-dialog-open @app-state) "modal-open")}
@@ -413,7 +413,7 @@
      [:p "Mission creation form would go here..."]]
     [:div.modal-footer
      [:button.btn.btn-secondary {:on-click #(swap! app-state assoc :create-dialog-open false)} "Cancel"]
-     [:button.btn.btn-primary "Create Mission"]]]
+     [:button.btn.btn-primary "Create Mission"]]])
 
 (defn mission-brief-dialog []
   (let [mission (:selected-mission @app-state)]
@@ -458,7 +458,7 @@
       
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-brief-open false)} "Close Brief"]
-       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]
+       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]))))
 
 (defn mission-rate-dialog []
   (let [mission (:selected-mission @app-state)
@@ -482,7 +482,7 @@
        [:p {:style {:color "#999" :font-size "0.9rem"}} (str "Selected rating: " current-rating "/5")]]
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-rate-open false :user-rating 0)} "Cancel"]
-       [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]
+       [:button.btn.btn-primary {:style {:background-color "#ffb74d" :color "#000"} :on-click #(rate-mission (:id mission) current-rating)} "Submit Rating"]]))
 
 (defn mission-submit-dialog []
   (let [form (:submission-form @app-state)]
@@ -606,7 +606,7 @@
                                             (str/blank? (:objective form))
                                             (str/blank? (:mission_description form))
                                             (str/blank? (:why_description form)))
-                                :on-click #(submit-mission form)} "Submit Mission"]]
+                                :on-click #(submit-mission form)} "Submit Mission"]]))
 
 (defn filter-dropdown [label options current-value filter-key]
   (let [colors (current-colors)]
@@ -654,7 +654,7 @@
                                                              :experience "All Experience Levels"
                                                              :search-text ""})
                             (update-filtered-missions))}
-       "Clear Filters"]]
+       "Clear Filters"]]))
 
 (defn navigation []
   (let [colors (current-colors)]
@@ -683,7 +683,7 @@
                      :on-change #(when-let [file (-> % .-target .-files (aget 0))]
                                   (upload-missions-yaml file))}]]
            [:button.btn.btn-secondary {:style {:background-color (:bg-quaternary colors) :color (:accent-blue colors) :border (str "1px solid " (:separator colors)) :padding "8px 16px" :border-radius "4px" :font-weight "bold" :cursor "pointer"} :on-click #(swap! app-state assoc :login-dialog-open true)} 
-            "🔐 Admin Login"]]
+            "🔐 Admin Login"]])))
 
 (defn missions-page []
   (let [colors (current-colors)]
