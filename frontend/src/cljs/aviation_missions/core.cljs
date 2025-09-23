@@ -458,7 +458,7 @@
       
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-brief-open false)} "Close Brief"]
-       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]))))
+       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]]]))))
 
 (defn mission-rate-dialog []
   (let [mission (:selected-mission @app-state)
