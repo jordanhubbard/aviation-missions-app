@@ -440,7 +440,7 @@
          [:div.brief-section
           [:h3 {:style {:color "#ffb74d" :margin-bottom "10px"}} "Why This Mission"]
           [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px" :margin-bottom "15px"}}
-           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]]) 
+           [:p {:style {:margin "0" :line-height "1.5"}} (:why_description mission)]]])
        (when (:route mission)
          [:div.brief-section
           [:h3 {:style {:color "#e57373" :margin-bottom "10px"}} "Route Information"]
@@ -453,10 +453,10 @@
          [:div.brief-section
           [:h3 {:style {:color "#ba68c8" :margin-bottom "10px"}} "Additional Notes"]
           [:div {:style {:background-color "#333" :padding "15px" :border-radius "4px"}}
-           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]]
+           [:p {:style {:margin "0" :line-height "1.5"}} (:notes mission)]]])
       [:div.modal-footer {:style {:background-color "#3d3d3d" :border-top "1px solid #555"}}
        [:button.btn.btn-secondary {:style {:background-color "#424242" :color "#e0e0e0" :border "1px solid #666"} :on-click #(swap! app-state assoc :mission-brief-open false)} "Close Brief"]
-       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]))
+       [:button.btn.btn-primary {:style {:background-color "#64b5f6" :color "#000"} :on-click #(do (complete-mission (:id mission)) (swap! app-state assoc :mission-brief-open false))} "Mark Complete"]]]))
 
 (defn mission-rate-dialog []
   (let [mission (:selected-mission @app-state)

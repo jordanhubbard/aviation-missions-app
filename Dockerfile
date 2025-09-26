@@ -3,7 +3,7 @@ FROM alpine:3.22 AS base
 
 # Install system dependencies
 RUN apk add --no-cache \
-    openjdk17-jre \
+    openjdk21-jre \
     nodejs \
     npm \
     curl \
