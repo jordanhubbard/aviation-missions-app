@@ -291,7 +291,7 @@
           mission-id (:id created-mission)]
 
       ;; Initially no completions
-      (is (empty? (db/get-mission-completions mission-id)))
+      (is (empty? (db/get-completions-for-mission mission-id)))
 
       ;; Mark as completed by first pilot
       (db/add-mission-completion! mission-id {:pilot_name "Pilot 1"
@@ -304,7 +304,7 @@
                                              :notes "Challenging but doable"})
 
       ;; Check completions
-      (let [completions (db/get-mission-completions mission-id)]
+      (let [completions (db/get-completions-for-mission mission-id)]
         (is (= (count completions) 2))
         (is (every? #(= (:mission_id %) mission-id) completions))
         (is (some #(= (:pilot_name %) "Pilot 1") completions))
