@@ -70,7 +70,7 @@
                                      :border-radius "6px"
                                      :cursor "pointer"}
                               :on-click #(swap! state/app-state assoc :mission-complete-rating i)}
-           (str i "⭐")])]]
+           (str i "⭐")])]
       [:div.modal-footer {:style {:background-color (:bg-tertiary colors) :border-top (str "1px solid " (:separator colors)) :border-radius "0 0 8px 8px"}}
        [:button.btn.btn-secondary {:style {:background-color (:bg-quaternary colors) :color (:text-primary colors) :border (str "1px solid " (:separator colors))} :on-click #(state/set-mission-rate-open! false)} "Cancel"]
        [:button.btn.btn-primary {:style {:background-color (:accent-blue colors) :color (:bg-primary colors) :border (str "2px solid " (:accent-blue colors))}
