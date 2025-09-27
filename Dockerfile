@@ -24,6 +24,7 @@ RUN for i in 1 2 3; do \
 RUN curl -sLO https://raw.githubusercontent.com/clj-kondo/clj-kondo/master/script/install-clj-kondo && \
     chmod +x install-clj-kondo && \
     ./install-clj-kondo --dir /usr/local/bin && \
+    chmod +x /usr/local/bin/clj-kondo && \
     rm install-clj-kondo
 
 # Install Clojure CLI for eastwood support
@@ -73,7 +74,7 @@ COPY backend/src ./backend/src/
 COPY frontend/src ./frontend/src/
 
 # Create deps.edn for eastwood support
-RUN echo '{:deps {jonase/eastwood {:mvn/version "1.4.2"}} :aliases {:lint-eastwood {:main-opts ["-m" "eastwood.lint" "{:source-paths [\"src\"]}"]}}}' > backend/deps.edn
+RUN echo '{:deps {jonase/eastwood {:mvn/version "1.4.2"} org.clojure/java.jdbc {:mvn/version "0.7.12"} clj-time/clj-time {:mvn/version "0.15.2"} org.clojure/tools.logging {:mvn/version "1.2.4"} ring/ring-core {:mvn/version "1.11.0"} ring/ring-codec {:mvn/version "1.2.0"} instaparse/instaparse {:mvn/version "1.4.12"}} :aliases {:lint-eastwood {:main-opts ["-m" "eastwood.lint" "{:source-paths [\"src\"]}"]}}}' > backend/deps.edn
 
 # Run comprehensive code analysis with professional tools
 RUN echo "=== RUNNING COMPREHENSIVE CODE ANALYSIS ===" && \
@@ -85,17 +86,26 @@ RUN echo "=== RUNNING COMPREHENSIVE CODE ANALYSIS ===" && \
 
 # Run clj-kondo analysis (fast, comprehensive linting)
 RUN echo "=== CLJ-KONDO ANALYSIS ===" && \
-    echo "Running clj-kondo on backend Clojure code..." && \
-    clj-kondo --lint backend/src --config '{:output {:format :text :canonical-paths true}}' || echo "clj-kondo backend analysis completed" && \
-    echo "Running clj-kondo on frontend ClojureScript code..." && \
-    clj-kondo --lint frontend/src --config '{:output {:format :text :canonical-paths true}}' || echo "clj-kondo frontend analysis completed" && \
+    echo "Checking clj-kondo installation..." && \
+    if clj-kondo --version >/dev/null 2>&1; then \
+        echo "clj-kondo working, running analysis..." && \
+        clj-kondo --version && \
+        echo "Running clj-kondo on backend Clojure code..." && \
+        clj-kondo --lint backend/src --config '{:output {:format :text :canonical-paths true}}' && \
+        echo "Running clj-kondo on frontend ClojureScript code..." && \
+        clj-kondo --lint frontend/src --config '{:output {:format :text :canonical-paths true}}' && \
+        echo "✅ clj-kondo analysis completed successfully"; \
+    else \
+        echo "⚠️  clj-kondo binary not compatible with this architecture, skipping..."; \
+        echo "Note: Other linting tools (eastwood, lein check) will still run"; \
+    fi && \
     echo ""
 
 # Run eastwood analysis (deep static analysis)
 RUN echo "=== EASTWOOD STATIC ANALYSIS ===" && \
     cd backend && \
     echo "Running eastwood deep analysis..." && \
-    clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}' || echo "Eastwood analysis completed" && \
+    clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"} org.clojure/java.jdbc {:mvn/version "0.7.12"} clj-time/clj-time {:mvn/version "0.15.2"} org.clojure/tools.logging {:mvn/version "1.2.4"} ring/ring-core {:mvn/version "1.11.0"} ring/ring-codec {:mvn/version "1.2.0"} instaparse/instaparse {:mvn/version "1.4.12"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}' || echo "Eastwood analysis completed with issues" && \
     echo ""
 
 # Run basic syntax validation
