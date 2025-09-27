@@ -149,7 +149,7 @@
           (status 400)))
     (catch Exception e
       (-> (response {:error "Failed to update mission" :details (.getMessage e)})
-          (status 500))))
+          (status 500)))))
 
 (defn delete-mission
   "Delete a mission"
