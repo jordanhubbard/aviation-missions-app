@@ -107,7 +107,7 @@ lint-eastwood:
 .PHONY: start
 start: build
 	@echo "🚀 Starting Aviation Mission Management (Production)..."
-	docker-compose -f $(COMPOSE_FILE) up -d
+	docker compose -f $(COMPOSE_FILE) up -d
 	@echo "✅ Application started successfully!"
 	@echo ""
 	@echo "🌐 Main Application: http://localhost:$(PORT)"
@@ -120,7 +120,7 @@ start: build
 .PHONY: dev
 dev: build
 	@echo "🚀 Starting Aviation Mission Management (Development)..."
-	docker-compose -f $(DEV_COMPOSE_FILE) up -d
+	docker compose -f $(DEV_COMPOSE_FILE) up -d
 	@echo "✅ Development environment started successfully!"
 	@echo ""
 	@echo "🌐 Main Application: http://localhost:$(PORT)"
@@ -145,8 +145,8 @@ dev-frontend:
 .PHONY: stop
 stop:
 	@echo "🛑 Stopping Aviation Mission Management..."
-	-docker-compose -f $(COMPOSE_FILE) down 2>/dev/null || true
-	-docker-compose -f $(DEV_COMPOSE_FILE) down 2>/dev/null || true
+	-docker compose -f $(COMPOSE_FILE) down 2>/dev/null || true
+	-docker compose -f $(DEV_COMPOSE_FILE) down 2>/dev/null || true
 	@echo "✅ Application stopped successfully!"
 
 # Restart the application (stop + start)
@@ -159,14 +159,14 @@ restart: stop start
 logs:
 	@echo "📋 Viewing Aviation Mission Management logs..."
 	@echo "Press Ctrl+C to stop viewing logs"
-	docker-compose -f $(COMPOSE_FILE) logs -f 2>/dev/null || docker-compose -f $(DEV_COMPOSE_FILE) logs -f
+	docker compose -f $(COMPOSE_FILE) logs -f 2>/dev/null || docker compose -f $(DEV_COMPOSE_FILE) logs -f
 
 # Clean up everything
 .PHONY: clean
 clean: stop
 	@echo "🧹 Cleaning up Docker resources..."
-	-docker-compose -f $(COMPOSE_FILE) down -v --rmi all --remove-orphans 2>/dev/null || true
-	-docker-compose -f $(DEV_COMPOSE_FILE) down -v --rmi all --remove-orphans 2>/dev/null || true
+	-docker compose -f $(COMPOSE_FILE) down -v --rmi all --remove-orphans 2>/dev/null || true
+	-docker compose -f $(DEV_COMPOSE_FILE) down -v --rmi all --remove-orphans 2>/dev/null || true
 	-docker rmi $(IMAGE_NAME):latest 2>/dev/null || true
 	-docker rmi $(IMAGE_NAME):dev 2>/dev/null || true
 	@echo "🗑️  Cleaning up application data..."
