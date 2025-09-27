@@ -162,7 +162,7 @@
           (response {:message "Mission deleted successfully"}))
         (-> (response {:error "Mission not found"})
             (status 404))))
-    (catch NumberFormatException e
+    (catch NumberFormatException _
       (-> (response {:error "Invalid mission ID"})
           (status 400)))
     (catch Exception e
@@ -301,7 +301,7 @@
 
 (defn get-submissions
   "Get all mission submissions"
-  [request]
+  [_request]
   (try
     (let [submissions (db/get-all-submissions)]
       (response {:submissions submissions}))
@@ -360,15 +360,15 @@
   (try
     (let [credentials (:body request)
           admin-name (:admin_name credentials)
-          password (:password credentials)]
-      ;; Use environment variables for admin credentials
-      (let [admin-user (or (System/getenv "ADMIN_USERNAME") "admin")
-            admin-pass (or (System/getenv "ADMIN_PASSWORD") "aviation123")]
+          password (:password credentials)
+          ;; Use environment variables for admin credentials
+          admin-user (or (System/getenv "ADMIN_USERNAME") "admin")
+          admin-pass (or (System/getenv "ADMIN_PASSWORD") "aviation123")]
         (if (and (= admin-name admin-user) (= password admin-pass))
           (let [token (db/create-admin-session! admin-name)]
             (response {:token token :admin_name admin-name}))
           (-> (response {:error "Invalid credentials"})
-              (status 401)))))
+              (status 401))))
     (catch Exception e
       (-> (response {:error "Login failed" :details (.getMessage e)})
           (status 500)))))
@@ -383,7 +383,7 @@
                   (if (.startsWith ^String auth-header "Bearer ")
                     (subs auth-header 7)
                     auth-header))
-          is-admin (and token (not (empty? token)) (db/validate-admin-session token))]
+          is-admin (and token (seq token) (db/validate-admin-session token))]
       (if is-admin
         (response {:is_admin true :admin_name (:admin_name is-admin)})
         (response {:is_admin false})))
@@ -394,7 +394,7 @@
 ;; Mission update approval handlers
 (defn get-mission-updates
   "Get all pending mission updates"
-  [request]
+  [_request]
   (try
     (let [updates (db/get-all-mission-updates)]
       (response {:updates updates}))
@@ -427,7 +427,7 @@
 ;; JSON Import/Export handlers
 (defn export-missions
   "Export all missions as JSON"
-  [request]
+  [_request]
   (try
     (let [missions (db/export-all-missions)]
       (response {:missions missions}))
@@ -437,7 +437,7 @@
 
 (defn export-missions-yaml
   "Export all missions as structured YAML following the schema"
-  [request]
+  [_request]
   (try
     (let [missions (db/export-all-missions)
           ;; Structure the data according to the schema with proper metadata

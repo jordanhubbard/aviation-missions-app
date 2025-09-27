@@ -10,54 +10,56 @@
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.not-modified :refer [wrap-not-modified]]
-            [ring.util.response :refer [response status resource-response content-type]]
+            [ring.util.response :refer [response resource-response content-type]]
             [aviation-missions.db :as db]
             [aviation-missions.handlers :as handlers]
             [aviation-missions.swagger :as swagger]
             [clojure.tools.logging :as log])
   (:gen-class))
 
+(def swagger-ui-html
+  (str "<!DOCTYPE html>"
+       "<html>"
+       "<head>"
+       "  <title>Aviation Mission Management API Documentation</title>"
+       "  <link rel=\"stylesheet\" type=\"text/css\" href=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css\" />"
+       "  <style>"
+       "    html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }"
+       "    *, *:before, *:after { box-sizing: inherit; }"
+       "    body { margin:0; background: #fafafa; }"
+       "  </style>"
+       "</head>"
+       "<body>"
+       "  <div id=\"swagger-ui\"></div>"
+       "  <script src=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js\"></script>"
+       "  <script src=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js\"></script>"
+       "  <script>"
+       "    window.onload = function() {"
+       "      const ui = SwaggerUIBundle({"
+       "        url: '/swagger.json',"
+       "        dom_id: '#swagger-ui',"
+       "        deepLinking: true,"
+       "        presets: ["
+       "          SwaggerUIBundle.presets.apis,"
+       "          SwaggerUIStandalonePreset"
+       "        ],"
+       "        plugins: ["
+       "          SwaggerUIBundle.plugins.DownloadUrl"
+       "        ],"
+       "        layout: \"StandaloneLayout\""
+       "      });"
+       "    };"
+       "  </script>"
+       "</body>"
+       "</html>"))
+
 (defroutes app-routes
   ;; API Documentation
   (GET "/swagger.json" [] swagger/swagger-spec)
   (GET "/api" []
     (log/info "📚 Serving API documentation interface at /api")
-    (-> (response
-    (str "<!DOCTYPE html>
-<html>
-<head>
-  <title>Aviation Mission Management API Documentation</title>
-  <link rel=\"stylesheet\" type=\"text/css\" href=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css\" />
-  <style>
-    html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
-    *, *:before, *:after { box-sizing: inherit; }
-    body { margin:0; background: #fafafa; }
-  </style>
-</head>
-<body>
-  <div id=\"swagger-ui\"></div>
-  <script src=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js\"></script>
-  <script src=\"https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js\"></script>
-  <script>
-    window.onload = function() {
-      const ui = SwaggerUIBundle({
-        url: '/swagger.json',
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        plugins: [
-          SwaggerUIBundle.plugins.DownloadUrl
-        ],
-        layout: \"StandaloneLayout\"
-      });
-    };
-  </script>
-</body>
-</html>"))
-                     (content-type "text/html")))
+    (-> (response swagger-ui-html)
+        (content-type "text/html")))
   
   ;; Mission endpoints
   (GET "/missions" [] handlers/get-missions)
