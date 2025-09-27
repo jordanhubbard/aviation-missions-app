@@ -76,4 +76,5 @@
        [:button.btn.btn-primary {:style {:background-color (:accent-blue colors) :color (:bg-primary colors) :border (str "2px solid " (:accent-blue colors))}
                                 :disabled (not (:mission-complete-rating @state/app-state))
                                 :on-click #(do (api/rate-mission (:id mission) (:mission-complete-rating @state/app-state))
-                                              (swap! state/app-state assoc :mission-complete-rating nil))} "Submit Rating"]]])))
+                                              (swap! state/app-state assoc :mission-complete-rating nil)
+                                              (state/set-mission-rate-open! false))} "Submit Rating"]]]))

@@ -1,4 +1,5 @@
-(ns aviation-missions.theme)
+(ns aviation-missions.theme
+  (:require [aviation-missions.state :as state]))
 
 (def dark-colors
   {:bg-primary "#0F172A"
@@ -35,4 +36,9 @@
    :active-bg "#E2E8F0"})
 
 (defn current-colors []
-  dark-colors)
+  (if (:dark-mode? @state/app-state)
+    dark-colors
+    light-colors))
+
+(defn toggle-theme []
+  (swap! state/app-state update :dark-mode? not))

@@ -1,4 +1,4 @@
-{:source-paths ["src/cljs"]
+{:source-paths ["src/cljs" "test/cljs"]
  :dependencies [[reagent "1.2.0"]
                 [cljs-http "0.1.46"]
                 [org.clojure/core.async "1.6.681"]]
@@ -15,4 +15,10 @@
               :http-port 8280}
    :dev {:compiler-options {:closure-defines {goog.DEBUG true}}}
    :release {:compiler-options {:optimizations :simple
-                               :closure-defines {goog.DEBUG false}}}}}}
+                               :closure-defines {goog.DEBUG false}}}}
+
+  :test
+  {:target :node-test
+   :output-to "target/test.js"
+   :main aviation-missions.test-runner
+   :autorun true}}}

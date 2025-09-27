@@ -31,6 +31,7 @@ help:
 	@echo "  logs         - View application logs (blocking)"
 	@echo "  clean        - Complete cleanup: stop, remove containers, images, and files"
 	@echo "  build        - Build the Docker image"
+	@echo "  test         - Run tests in Docker containers (recommended for CI/CD)"
 	@echo "  test-local   - Test the application locally"
 	@echo ""
 	@echo "  Code Quality & Analysis:"
@@ -174,6 +175,14 @@ clean: stop
 	-rm -rf frontend/dist/ 2>/dev/null || true
 	-rm -rf frontend/node_modules/.cache/ 2>/dev/null || true
 	@echo "✅ Complete cleanup finished!"
+
+# Test the application in Docker containers
+.PHONY: test
+test:
+	@echo "🧪 Testing application in Docker containers..."
+	@echo "Building test environment..."
+	docker build --target testing -t $(IMAGE_NAME):test .
+	@echo "✅ All tests completed successfully!"
 
 # Test the application locally
 .PHONY: test-local

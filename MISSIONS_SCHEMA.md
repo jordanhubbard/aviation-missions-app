@@ -2,6 +2,13 @@
 
 This document defines the complete data structure for aviation training missions in the Aviation Mission Management system.
 
+## JSON Schema
+
+The authoritative schema is defined in `mission-schema.json` using JSON Schema Draft 07:
+- **Schema ID**: `https://aviation-missions.app/schemas/mission.json`
+- **Title**: "Aviation Mission"
+- **Type**: Object with strict validation (`additionalProperties: false`)
+
 ## Mission Data Structure
 
 ### Core Mission Fields
@@ -9,12 +16,12 @@ This document defines the complete data structure for aviation training missions
 | Field | Type | Required | Description | Example |
 |-------|------|----------|-------------|---------|
 | `id` | `BIGINT` | Auto | Unique mission identifier | `1` |
-| `title` | `VARCHAR(255)` | ✅ | Mission title/name | `"Class B Ops: LAX Bravo Transition"` |
+| `title` | `VARCHAR(255)` | ✅ | Mission title/name | `"Class B Ops: LAX Bravo Transition"`, `"Mountain Gateway: Truckee (KTRK)"`, `"Coastal Marine Layer Run: Half Moon Bay (KHAF)"` |
 | `category` | `VARCHAR(100)` | ✅ | Mission category | `"Airspace Operations"` |
 | `difficulty` | `INTEGER` | ✅ | Difficulty rating (1-10) | `7` |
-| `objective` | `TEXT` | ✅ | Primary learning objective | `"Master Class B communication, clearances, and situational awareness"` |
-| `mission_description` | `TEXT` | ✅ | Detailed mission description | `"Fly down the California coast, request the Coastal Route..."` |
-| `why_description` | `TEXT` | ✅ | Educational rationale | `"Learn to fit GA ops into airline-dense airspace"` |
+| `objective` | `TEXT` | ✅ | Primary learning objective | `"Master Class B communication, clearances, and situational awareness"`, `"Practice overwater flight planning and engine-out decision-making"` |
+| `mission_description` | `TEXT` | ✅ | Detailed mission description | `"Fly down the California coast, request the Coastal Route or Mini Route through LAX Bravo"`, `"Launch from KPAO, cross to KHAF on a less than ideal day, then continue down to KMRY"` |
+| `why_description` | `TEXT` | ✅ | Educational rationale | `"Learn to fit GA ops into airline-dense airspace, sharpen radio skills"`, `"Coastal ops teach rapid weather evaluation and diversion decision-making"` |
 | `notes` | `TEXT` | ❌ | Additional notes and tips | `"Study LAX VFR charts. Have alternates (e.g., Hawthorne)"` |
 | `route` | `VARCHAR(500)` | ❌ | Primary route description | `"KPAO → coastal route south → LAX Bravo → KTOA"` |
 | `suggested_route` | `VARCHAR(500)` | ❌ | Suggested waypoint route | `"KPAO KWVI KHHR KTOA"` |
@@ -44,20 +51,22 @@ This document defines the complete data structure for aviation training missions
 
 ## Mission Categories
 
-The system automatically categorizes missions based on title and content analysis:
+The system supports the following predefined mission categories (enum values):
 
-| Category | Keywords | Description |
-|----------|----------|-------------|
-| `"Airspace Operations"` | class b, class c, bravo, charlie | Complex airspace navigation |
-| `"Terrain & Environment"` | mountain, terrain, island, catalina, sierra, tahoe | Challenging terrain operations |
-| `"Weather & Atmospheric"` | marine layer, weather, fog, summer, desert | Weather-related training |
-| `"Navigation & Diversions"` | navigation, cross-country, diversion, dead reckoning | Navigation skills |
-| `"Airport Operations"` | airport, runway, pattern, taxi | Airport-specific procedures |
-| `"Endurance & Planning"` | endurance, longer, overnight, bush | Long-distance flight planning |
-| `"Advanced Adventures"` | audacious, adventure, death valley, extreme | Advanced/challenging missions |
-| `"General Training"` | *default* | General aviation training |
+| Category | Description |
+|----------|-------------|
+| `"Airspace Operations"` | Complex airspace navigation (Class B, Class C operations) |
+| `"Terrain & Environment"` | Challenging terrain operations (mountain, island flying) |
+| `"Weather & Atmospheric"` | Weather-related training (marine layer, fog, challenging conditions) |
+| `"Navigation & Diversions"` | Navigation skills (cross-country, diversions, dead reckoning) |
+| `"Airport Operations"` | Airport-specific procedures (pattern work, taxi operations) |
+| `"Endurance & Planning"` | Long-distance flight planning and endurance missions |
+| `"Advanced Adventures"` | Advanced/challenging missions (extreme conditions, remote locations) |
+| `"General Training"` | General aviation training (default category) |
 
 ## Pilot Experience Levels
+
+Enum values for the `pilot_experience` field:
 
 | Level | Description | Hours |
 |-------|-------------|-------|
@@ -65,6 +74,7 @@ The system automatically categorizes missions based on title and content analysi
 | `"Intermediate (100-500 hours)"` | Developing pilots | 100-499 hours |
 | `"Advanced (500+ hours)"` | Experienced pilots | 500+ hours |
 | `"Commercial/ATP"` | Professional pilots | Commercial/ATP rated |
+| `null` | Unspecified (defaults to "Beginner (< 100 hours)") | - |
 
 ## Difficulty Scale
 
@@ -188,19 +198,28 @@ Creates a new mission.
 ## Validation Rules
 
 ### Required Fields
-- `title`: Non-empty string, max 255 characters
-- `category`: Must be one of the predefined categories
+- `title`: Non-empty string, min 1 character, max 255 characters
+- `category`: Must be one of the predefined enum values (see Mission Categories above)
 - `difficulty`: Integer between 1 and 10 (inclusive)
-- `objective`: Non-empty text
-- `mission_description`: Non-empty text  
-- `why_description`: Non-empty text
+- `objective`: Non-empty text, min 1 character
+- `mission_description`: Non-empty text, min 1 character
+- `why_description`: Non-empty text, min 1 character
 
 ### Optional Fields
-- `notes`: Any text or null
+- `notes`: String or null
 - `route`: String up to 500 characters or null
-- `suggested_route`: String up to 500 characters or null
-- `pilot_experience`: String up to 50 characters or null
-- `special_challenges`: Any text or null
+- `suggested_route`: String up to 500 characters or null, must match pattern `^([A-Z0-9]{3,4}\s*)*$` (ICAO codes)
+- `pilot_experience`: Must be one of the predefined enum values or null (max 50 characters)
+- `special_challenges`: String or null
+
+### Auto-Generated Fields
+- `id`: Integer, minimum 1 (auto-generated)
+- `comment_count`: Integer, minimum 0 (computed, read-only)
+- `completion_count`: Integer, minimum 0 (computed, read-only)
+- `thumbs_up`: Integer, minimum 0 (computed, read-only)
+- `thumbs_down`: Integer, minimum 0 (computed, read-only)
+- `created_at`: ISO 8601 date-time string (read-only)
+- `updated_at`: ISO 8601 date-time string (read-only)
 
 ### Business Rules
 - Mission titles should be descriptive and include airport codes where relevant

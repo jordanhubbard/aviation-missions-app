@@ -13,7 +13,7 @@
            :experience-filter "All"
            :pilot-name ""
            :experience-level "Beginner"
-           :dark-mode true
+           :dark-mode? true
            :current-route {:from nil :to nil}
            :selected-waypoint nil
            :pilot-info {:name ""
