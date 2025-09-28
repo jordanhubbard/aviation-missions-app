@@ -1,7 +1,7 @@
 (ns aviation-missions.core
   (:require
    [reagent.core :as r]
-   [reagent.dom :as rdom]
+   [reagent.dom.client :as rdom]
    [aviation-missions.config :as config]
    [aviation-missions.theme :refer [current-colors]]
    [aviation-missions.state :as state]
@@ -24,16 +24,23 @@
        [:div#app-loaded-sentinel {:style {:position "absolute" :bottom "10px" :right "10px" :font-size "10px" :opacity "0.5" :color (:text-secondary colors)}}
         "<!-- AVIATION_MISSIONS_APP_FULLY_LOADED -->"])]))
 
+(defonce root-atom (atom nil))
+
 (defn ^:dev/after-load mount-root []
   (js/console.log "🔧 MOUNT-ROOT: Starting mount process...")
   (let [root-el (.getElementById js/document "app")]
     (js/console.log "🔧 MOUNT-ROOT: Found app element:" root-el)
     (js/console.log "🔧 MOUNT-ROOT: App element innerHTML before render:" (.-innerHTML root-el))
 
-    (js/console.log "🔧 MOUNT-ROOT: Rendering new component...")
-    (rdom/render [app] root-el)
-    (js/console.log "🔧 MOUNT-ROOT: App element innerHTML after render:" (.-innerHTML root-el))
-    (js/console.log "🔧 MOUNT-ROOT: Mount process complete!")))
+    (js/console.log "🔧 MOUNT-ROOT: Creating/getting React root...")
+    (let [react-root (or @root-atom
+                         (let [new-root (rdom/create-root root-el)]
+                           (reset! root-atom new-root)
+                           new-root))]
+      (js/console.log "🔧 MOUNT-ROOT: Rendering new component...")
+      (rdom/render react-root [app])
+      (js/console.log "🔧 MOUNT-ROOT: App element innerHTML after render:" (.-innerHTML root-el))
+      (js/console.log "🔧 MOUNT-ROOT: Mount process complete!"))))
 
 (defn init! []
   (js/console.log "🏠 FRONTEND STARTUP: Aviation Missions UI initializing...")
