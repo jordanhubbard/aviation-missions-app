@@ -6,4 +6,4 @@
 (def api-base-url
   (if debug?
     "http://localhost:8080"
-    "")) ; Empty string means same origin - should work for Railway deployment
+    "http://localhost:8080")) ; Use localhost for both debug and production

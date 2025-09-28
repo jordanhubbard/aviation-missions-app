@@ -47,7 +47,7 @@
 3. **Access the application**:
    - **Web Interface**: http://localhost:8080
    - **API Documentation**: http://localhost:8080/api/swagger.json
-   - **API Endpoint**: http://localhost:3000
+   - **API Endpoint**: http://localhost:8080/api
 
 ### Custom Configuration
 
@@ -55,11 +55,10 @@ Override default ports using environment variables:
 
 ```bash
 # Use custom ports
-PORT=9000 API_PORT=4000 make start
+PORT=9000 make start
 
 # Or set permanently
 export PORT=9000
-export API_PORT=4000
 make start
 ```
 
@@ -90,51 +89,63 @@ make start
 ## 📖 API Reference
 
 ### Mission Management
-- `GET /missions` - List all missions with optional filtering
-- `GET /missions/:id` - Retrieve specific mission details
-- `POST /missions` - Create new mission (admin only)
-- `PUT /missions/:id` - Update existing mission (admin only)
-- `DELETE /missions/:id` - Delete mission (admin only)
+- `GET /api/missions` - List all missions with optional filtering
+- `GET /api/missions/:id` - Retrieve specific mission details
+- `POST /api/missions` - Create new mission (admin only)
+- `PUT /api/missions/:id` - Update existing mission (admin only)
+- `DELETE /api/missions/:id` - Delete mission (admin only)
 
 ### Community Interactions
-- `GET /missions/:id/comments` - Get mission comments
-- `POST /missions/:id/comments` - Add comment to mission
-- `POST /missions/:id/complete` - Mark mission as completed
-- `POST /missions/:id/rate` - Rate mission (1-5 stars)
-- `GET /missions/:id/rating` - Get user's rating for mission
+- `GET /api/missions/:id/comments` - Get mission comments
+- `POST /api/missions/:id/comments` - Add comment to mission
+- `POST /api/missions/:id/complete` - Mark mission as completed
+- `POST /api/missions/:id/rate` - Rate mission (1-5 stars)
+- `GET /api/missions/:id/rating` - Get user's rating for mission
 
 ### Mission Submissions
-- `GET /submissions` - List pending submissions (admin only)
-- `POST /submissions` - Submit new mission for review
-- `PUT /submissions/:id/approve` - Approve submission (admin only)
-- `PUT /submissions/:id/reject` - Reject submission (admin only)
+- `GET /api/submissions` - List pending submissions (admin only)
+- `POST /api/missions/submit` - Submit new mission for review
+- `PUT /api/submissions/:id/approve` - Approve submission (admin only)
+- `PUT /api/submissions/:id/reject` - Reject submission (admin only)
 
 ### System Endpoints
 - `GET /health` - Application health check
-- `GET /swagger.json` - OpenAPI specification
-- `GET /missions/export/yaml` - Export all missions as YAML
+- `GET /api/swagger.json` - OpenAPI specification
+- `GET /api/missions/export/yaml` - Export all missions as YAML
+- `GET /api/admin/status` - Check admin authentication status
+- `POST /api/admin/login` - Admin login
 
 ## 🛠️ Development
 
 ### Local Development Setup
 
-1. **Backend development**:
+#### Prerequisites for Local Development
+- **Java 21+** (for Clojure backend)
+- **Leiningen** (Clojure build tool)
+- **Node.js 18+** (for ClojureScript frontend)
+- **npm** (Node package manager)
+
+#### Development Options
+
+1. **Production deployment (Recommended)**:
+   ```bash
+   make start
+   # Full Docker deployment - no local setup required
+   ```
+
+2. **Local backend development** (requires Java + Leiningen):
    ```bash
    make dev-backend
    # Starts Clojure REPL server on http://localhost:3000
    ```
 
-2. **Frontend development**:
+3. **Local frontend development** (requires Node.js):
    ```bash
    make dev-frontend
    # Starts Shadow-CLJS with hot reloading
    ```
 
-3. **Full development environment**:
-   ```bash
-   make dev
-   # Starts both backend and frontend in development mode
-   ```
+**Note**: There is no `make dev` command as it requires a `docker-compose.dev.yml` file that is not included. For full development, use `make start` for Docker deployment, or run backend and frontend separately with local tools.
 
 ### Code Quality
 
@@ -195,10 +206,11 @@ The application is designed for easy deployment on various cloud platforms:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `8080` | Main application port |
-| `API_PORT` | `3000` | Backend API port |
+| `PORT` | `8080` | Main application port (both frontend and API) |
 | `DATABASE_URL` | `./data/aviation-missions` | H2 database location |
 | `ENVIRONMENT` | `production` | Runtime environment |
+
+**Note**: In the current setup, both frontend and API are served on the same port (8080), with API endpoints under `/api/*` path.
 
 ## 💾 Data Management
 

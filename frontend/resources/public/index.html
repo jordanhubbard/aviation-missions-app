@@ -13,6 +13,156 @@
             <p>Please wait while the application loads...</p>
         </div>
     </div>
+
+    <!-- JavaScript execution test and error capture -->
+    <script>
+    console.log("🧪 JAVASCRIPT TEST: Basic JS execution working");
+
+    // Global error handler to catch ClojureScript errors
+    window.addEventListener('error', function(event) {
+        console.error("🚨 GLOBAL ERROR:", event.error);
+        console.error("🚨 ERROR STACK:", event.error ? event.error.stack : 'No stack');
+        console.error("🚨 ERROR MESSAGE:", event.message);
+        console.error("🚨 ERROR SOURCE:", event.filename + ':' + event.lineno + ':' + event.colno);
+
+        // Add visible error indicator with full details
+        var errorEl = document.createElement('div');
+        errorEl.innerHTML = '<strong>JS ERROR:</strong> ' + event.message + '<br>' +
+                           '<strong>Source:</strong> ' + (event.filename || 'unknown') + ':' + (event.lineno || '?') + '<br>' +
+                           '<strong>Stack:</strong> ' + (event.error && event.error.stack ? event.error.stack.substring(0, 200) + '...' : 'No stack');
+        errorEl.style.position = 'fixed';
+        errorEl.style.top = '10px';
+        errorEl.style.left = '10px';
+        errorEl.style.fontSize = '12px';
+        errorEl.style.color = 'red';
+        errorEl.style.backgroundColor = 'yellow';
+        errorEl.style.border = '2px solid red';
+        errorEl.style.padding = '10px';
+        errorEl.style.zIndex = '9999';
+        errorEl.style.maxWidth = '80%';
+        errorEl.style.fontFamily = 'monospace';
+        document.body.appendChild(errorEl);
+    });
+
+    try {
+        console.log("🧪 JAVASCRIPT TEST: About to load main.js");
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("🧪 JAVASCRIPT TEST: DOM ready");
+        });
+        // Add visible indicator that JavaScript is working
+        setTimeout(function() {
+            var testEl = document.createElement('div');
+            testEl.id = 'js-test-indicator';
+            testEl.textContent = '<!-- JS_EXECUTION_WORKING -->';
+            testEl.style.position = 'absolute';
+            testEl.style.bottom = '0px';
+            testEl.style.left = '0px';
+            testEl.style.fontSize = '10px';
+            testEl.style.opacity = '0.3';
+            document.body.appendChild(testEl);
+        }, 100);
+    } catch (error) {
+        console.error("🧪 JAVASCRIPT TEST: Error in basic JS:", error);
+    }
+    </script>
+
     <script src="/js/main.js"></script>
+
+    <!-- Post-load verification script -->
+    <script>
+    // Check if ClojureScript initialized successfully after a delay
+    setTimeout(function() {
+        console.log("🧪 POST-LOAD CHECK: Checking ClojureScript initialization...");
+
+        // Create visible debug output div
+        var debugEl = document.createElement('div');
+        debugEl.id = 'debug-output';
+        debugEl.style.position = 'fixed';
+        debugEl.style.top = '100px';
+        debugEl.style.left = '10px';
+        debugEl.style.fontSize = '12px';
+        debugEl.style.color = 'white';
+        debugEl.style.backgroundColor = 'black';
+        debugEl.style.border = '1px solid gray';
+        debugEl.style.padding = '10px';
+        debugEl.style.zIndex = '10000';
+        debugEl.style.maxWidth = '80%';
+        debugEl.style.fontFamily = 'monospace';
+        debugEl.style.maxHeight = '300px';
+        debugEl.style.overflow = 'auto';
+
+        var results = [];
+
+        // Check if ClojureScript globals exist
+        if (typeof aviation_missions !== 'undefined') {
+            results.push("✅ aviation_missions namespace exists");
+
+            // Check if core functions exist
+            if (aviation_missions.core && aviation_missions.core.init_BANG_) {
+                results.push("✅ aviation_missions.core.init_BANG_ exists");
+            } else {
+                results.push("❌ aviation_missions.core.init_BANG_ NOT found");
+            }
+
+            // Check if app state exists
+            if (aviation_missions.state && aviation_missions.state.app_state) {
+                results.push("✅ aviation_missions.state.app_state exists");
+                try {
+                    var stateValue = aviation_missions.state.app_state;
+                    if (stateValue && stateValue['cljs$core$deref'] && typeof stateValue['cljs$core$deref'] === 'function') {
+                        var appState = stateValue['cljs$core$deref']();
+                        results.push("📊 app_state has " + Object.keys(appState).length + " keys");
+                        results.push("📊 missions: " + (appState.missions ? appState.missions.length + " items" : "none"));
+                        results.push("📊 loading: " + appState.loading);
+                    } else {
+                        results.push("📊 app_state format: " + typeof stateValue);
+                    }
+                } catch (err) {
+                    results.push("⚠️  Error reading app_state: " + err.message);
+                }
+            } else {
+                results.push("❌ aviation_missions.state.app_state NOT found");
+            }
+
+            // Check if Reagent exists
+            if (typeof reagent !== 'undefined') {
+                results.push("✅ reagent namespace exists");
+            } else {
+                results.push("❌ reagent namespace NOT found");
+            }
+        } else {
+            results.push("❌ aviation_missions namespace NOT found");
+            var availableGlobals = Object.keys(window).filter(k => k.includes('aviation') || k.includes('cljs') || k.includes('reagent') || k.includes('goog'));
+            results.push("🔍 Available globals: " + availableGlobals.slice(0, 10).join(', '));
+        }
+
+        // Check if sentinel appeared
+        var sentinel = document.getElementById('app-loaded-sentinel');
+        if (sentinel) {
+            results.push("✅ App loaded sentinel FOUND!");
+        } else {
+            results.push("❌ App loaded sentinel NOT found");
+
+            // Check app div content
+            var appDiv = document.getElementById('app');
+            if (appDiv) {
+                var content = appDiv.innerHTML.substring(0, 200);
+                results.push("📋 App div content: " + content.replace(/\n/g, ' ').replace(/\s+/g, ' ') + '...');
+            }
+        }
+
+        debugEl.innerHTML = results.join('<br>');
+        document.body.appendChild(debugEl);
+
+        // Also log to console for good measure
+        results.forEach(function(result) {
+            if (result.startsWith('❌')) {
+                console.error('POST-LOAD CHECK: ' + result);
+            } else {
+                console.log('POST-LOAD CHECK: ' + result);
+            }
+        });
+    }, 2000);
+    </script>
 </body>
 </html>

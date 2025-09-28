@@ -81,6 +81,6 @@
          :on-click #(api/complete-mission (:id mission))}
         "✅ COMPLETE"]
        [:button.btn-mission
-        {:style {:background-color (:accent-cyan colors) :color (:bg-primary colors) :border (str "2px solid " (:accent-cyan colors)) :padding "6px 12px" :border-radius "6px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
+        {:style {:background-color (:accent-purple colors) :color (:bg-primary colors) :border (str "2px solid " (:accent-purple colors)) :padding "6px 12px" :border-radius "6px" :font-size "0.8rem" :font-weight "bold" :cursor "pointer"}
          :on-click #(do (state/set-selected-mission! mission) (state/set-mission-rate-open! true) (swap! state/app-state assoc :user-rating 0))}
         "⭐ RATE"]]]]))

@@ -1,6 +1,6 @@
 (ns aviation-missions.core
   (:require [ring.adapter.jetty :as jetty]
-            [compojure.core :refer [defroutes GET POST PUT DELETE]]
+            [compojure.core :refer [defroutes GET POST PUT DELETE OPTIONS]]
             [compojure.route :as route]
             [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
             [ring.middleware.cors :refer [wrap-cors]]
@@ -106,27 +106,40 @@
       (log/debug (format "Health check: API responding, %d missions available" mission-count))
       (response {:status "healthy" :missions_loaded mission-count})))
   
+  ;; CORS preflight handler - handle OPTIONS requests for all API endpoints
+  (OPTIONS "/api/*" []
+    (-> (response "")
+        (assoc-in [:headers "Access-Control-Allow-Origin"] "*")
+        (assoc-in [:headers "Access-Control-Allow-Methods"] "GET, POST, PUT, DELETE, OPTIONS")
+        (assoc-in [:headers "Access-Control-Allow-Headers"] "Content-Type, Authorization, Accept")
+        (assoc-in [:headers "Access-Control-Max-Age"] "86400")))
+
   ;; Serve frontend static files
   (GET "/" [] (-> (resource-response "public/index.html")
                   (assoc-in [:headers "Content-Type"] "text/html; charset=utf-8")))
   (GET "/*" [] (-> (resource-response "public/index.html")
                    (assoc-in [:headers "Content-Type"] "text/html; charset=utf-8")))
-  
+
   (route/not-found {:status 404 :body {:error "Not found"}}))
 
 (def app
   (-> app-routes
-      wrap-keyword-params
-      wrap-params
+      ;; Apply CORS first to handle preflight OPTIONS requests
       (wrap-cors :access-control-allow-origin [#".*"]
                  :access-control-allow-methods [:get :post :put :delete :options]
-                 :access-control-allow-headers ["Content-Type" "Authorization"])
+                 :access-control-allow-headers ["Content-Type" "Authorization" "Accept"]
+                 :access-control-max-age (* 60 60 24)) ; Cache preflight for 24 hours
+      wrap-keyword-params
+      wrap-params
       (wrap-json-body {:keywords? true})
       wrap-json-response
       (wrap-resource "public")
       wrap-content-type
       wrap-not-modified
-      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] false))))
+      ;; Disable anti-forgery and frame options for API compatibility
+      (wrap-defaults (-> site-defaults
+                         (assoc-in [:security :anti-forgery] false)
+                         (assoc-in [:security :frame-options] false)))))
 
 (defn -main
   "Start the server"

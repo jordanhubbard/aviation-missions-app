@@ -3,6 +3,7 @@
 
 (defonce app-state
   (r/atom {:missions []
+           :filtered-missions []
            :completed-missions #{}
            :current-page :missions
            :selected-mission nil
@@ -16,6 +17,10 @@
            :dark-mode? true
            :current-route {:from nil :to nil}
            :selected-waypoint nil
+           :filters {:category "All Categories"
+                     :difficulty "All Difficulties"
+                     :experience "All Experience Levels"
+                     :search-text ""}
            :pilot-info {:name ""
                        :experience "Beginner"
                        :flight-hours 0

@@ -6,27 +6,50 @@
 
 (defn fetch-missions []
   (js/console.log "Fetching missions from API...")
+  (js/console.log "API base URL:" config/api-base-url)
   (swap! state/app-state assoc :loading true)
-  (go
-    (let [url (str config/api-base-url "/missions")
-          response (<! (http/get url))]
-      (if (= 200 (:status response))
-        (do
-          (js/console.log "Missions loaded successfully")
-          (swap! state/app-state assoc :missions (:missions (:body response)) :loading false))
-        (do
-          (js/console.error "Failed to fetch missions")
-          (swap! state/app-state assoc :loading false))))))
+
+  ;; Use JavaScript fetch directly to test
+  (let [url (str config/api-base-url "/api/missions")]
+    (js/console.log "Requesting URL:" url)
+    (-> (js/fetch url)
+        (.then (fn [response]
+                 (js/console.log "Fetch response received, status:" (.-status response))
+                 (if (= 200 (.-status response))
+                   (-> response
+                       (.json)
+                       (.then (fn [data]
+                                (js/console.log "JSON data received:" data)
+                                (let [missions (.-missions data)]
+                                  (js/console.log "Missions array:" missions)
+                                  (js/console.log "Mission count:" (.-length missions))
+                                  (swap! state/app-state assoc :missions (js->clj missions :keywordize-keys true) :loading false)))))
+                   (do
+                     (js/console.error "HTTP error, status:" (.-status response))
+                     (swap! state/app-state assoc :loading false)))))
+        (.catch (fn [error]
+                  (js/console.error "Fetch error:" error)
+                  (js/console.error "Error message:" (.-message error))
+                  (swap! state/app-state assoc :loading false))))))
 
 (defn check-admin-status []
+  (js/console.log "Checking admin status...")
   (go
-    (let [response (<! (http/get (str config/api-base-url "/admin/check")))]
-      (when (= 200 (:status response))
-        (swap! state/app-state assoc :admin? (:admin (:body response)))))))
+    (let [url (str config/api-base-url "/api/admin/status")
+          _ (js/console.log "Admin status URL:" url)
+          response (<! (http/get url))]
+      (js/console.log "Admin status response:" (pr-str response))
+      (if (= 200 (:status response))
+        (do
+          (js/console.log "Admin status loaded successfully")
+          (swap! state/app-state assoc :admin? (:is_admin (:body response))))
+        (do
+          (js/console.error "Failed to check admin status. Status:" (:status response))
+          (js/console.error "Admin status error:" (pr-str response)))))))
 
 (defn admin-login [credentials]
   (go
-    (let [response (<! (http/post (str config/api-base-url "/admin/login")
+    (let [response (<! (http/post (str config/api-base-url "/api/admin/login")
                                   {:json-params credentials}))]
       (if (= 200 (:status response))
         (do
@@ -36,7 +59,7 @@
 
 (defn complete-mission [mission-id]
   (go
-    (let [response (<! (http/post (str config/api-base-url "/missions/" mission-id "/complete")))]
+    (let [response (<! (http/post (str config/api-base-url "/api/missions/" mission-id "/complete")))]
       (if (= 200 (:status response))
         (do
           (js/alert "Mission completed successfully!")
@@ -45,7 +68,7 @@
 
 (defn rate-mission [mission-id rating]
   (go
-    (let [response (<! (http/post (str config/api-base-url "/missions/" mission-id "/rate")
+    (let [response (<! (http/post (str config/api-base-url "/api/missions/" mission-id "/rate")
                                   {:json-params {:rating rating}}))]
       (if (= 200 (:status response))
         (do
@@ -56,7 +79,7 @@
 
 (defn submit-mission [mission-data]
   (go
-    (let [response (<! (http/post (str config/api-base-url "/missions/submit")
+    (let [response (<! (http/post (str config/api-base-url "/api/missions/submit")
                                   {:json-params mission-data}))]
       (if (= 200 (:status response))
         (do
@@ -77,7 +100,7 @@
 
 (defn download-missions-yaml []
   (go
-    (let [response (<! (http/get (str config/api-base-url "/missions/export/yaml")))]
+    (let [response (<! (http/get (str config/api-base-url "/api/missions/export/yaml")))]
       (if (= 200 (:status response))
         (let [yaml-content (:body response)
               blob (js/Blob. #js [yaml-content] #js {:type "application/x-yaml"})
@@ -95,7 +118,7 @@
   (go
     (let [form-data (js/FormData.)
           _ (.append form-data "file" file)
-          response (<! (http/post (str config/api-base-url "/missions/import/yaml")
+          response (<! (http/post (str config/api-base-url "/api/missions/import/yaml")
                                   {:body form-data
                                    :headers {"Authorization" (str "Bearer " (.getItem js/localStorage "admin-token"))}}))]
       (if (= 200 (:status response))

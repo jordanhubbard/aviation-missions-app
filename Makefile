@@ -25,25 +25,24 @@ help:
 	@echo "Aviation Mission Management - Available Commands:"
 	@echo ""
 	@echo "  start        - Build and start the complete application (production)"
-	@echo "  dev          - Build and start in development mode"
 	@echo "  restart      - Stop and restart the application (convenience command)"
 	@echo "  stop         - Stop the running application"
 	@echo "  logs         - View application logs (blocking)"
 	@echo "  clean        - Complete cleanup: stop, remove containers, images, and files"
 	@echo "  build        - Build the Docker image"
 	@echo "  test         - Run tests in Docker containers (recommended for CI/CD)"
-	@echo "  test-local   - Test the application locally"
+	@echo "  test-local   - Test the application locally (requires local setup)"
 	@echo ""
 	@echo "  Code Quality & Analysis:"
 	@echo "  lint         - Comprehensive analysis (clj-kondo + eastwood + compilation)"
 	@echo "  lint-fast    - Fast syntax checking with clj-kondo only"
-	@echo "  lint-eastwood- Deep static analysis with eastwood"
+	@echo "  lint-eastwood- Deep static analysis with eastwood (requires local setup)"
 	@echo ""
 	@echo "  Database Management:"
 	@echo "  backup       - Create a backup of the database"
 	@echo "  restore      - Restore database from backup (requires BACKUP_FILE)"
 	@echo ""
-	@echo "  Backend Development:"
+	@echo "  Local Development (requires local Clojure/Node.js setup):"
 	@echo "  dev-backend  - Start only the Clojure backend for development"
 	@echo "  dev-frontend - Start only the ClojureScript frontend for development"
 	@echo ""
@@ -52,11 +51,13 @@ help:
 	@echo "  API_PORT = $(API_PORT) (Backend API port)"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make start                    # Production mode"
-	@echo "  make dev                      # Development mode"
+	@echo "  make start                    # Production mode (Docker)"
 	@echo "  make lint                     # Comprehensive code analysis"
 	@echo "  make lint-fast                # Quick syntax check"
 	@echo "  PORT=9000 make start          # Use custom port"
+	@echo ""
+	@echo "Note: Development mode requires docker-compose.dev.yml (not included)"
+	@echo "      For local development, use dev-backend and dev-frontend separately"
 
 # Build the Docker image
 .PHONY: build
@@ -118,16 +119,16 @@ start: build
 
 # Start the application in development mode
 .PHONY: dev
-dev: build
-	@echo "🚀 Starting Aviation Mission Management (Development)..."
-	docker compose -f $(DEV_COMPOSE_FILE) up -d
-	@echo "✅ Development environment started successfully!"
+dev:
+	@echo "❌ Development mode requires docker-compose.dev.yml which is not included."
 	@echo ""
-	@echo "🌐 Main Application: http://localhost:$(PORT)"
-	@echo "📚 API Documentation: http://localhost:$(PORT)/api/swagger.json"
+	@echo "For local development, use:"
+	@echo "  make dev-backend   # Start backend (requires Leiningen)"
+	@echo "  make dev-frontend  # Start frontend (requires Node.js)"
 	@echo ""
-	@echo "To view logs: make logs"
-	@echo "To stop: make stop"
+	@echo "For production deployment, use:"
+	@echo "  make start         # Full Docker deployment"
+	@exit 1
 
 # Start only the backend for development
 .PHONY: dev-backend
