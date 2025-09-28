@@ -10,21 +10,25 @@
    [aviation-missions.dialogs :refer [mission-brief-dialog mission-rate-dialog]]))
 
 (defn app []
-  [:div.app {:style {:background-color "#0F172A" :min-height "100vh" :color "#F8FAFC" :padding "20px"}}
-   [:h1 "🎯 Aviation Mission Management - Test"]
-   [:p "If you can see this, React/Reagent is working!"]
-   [:div#app-loaded-sentinel {:style {:position "absolute" :bottom "10px" :right "10px" :font-size "10px" :opacity "0.5"}}
-    "<!-- AVIATION_MISSIONS_APP_FULLY_LOADED -->"]])
+  (let [colors (current-colors)
+        missions (state/get-missions)
+        loading? (:loading @state/app-state)]
+    [:div.app {:style {:background-color (:bg-primary colors) :min-height "100vh" :color (:text-primary colors)}}
+     [navigation]
+     [:main.main-content
+      [missions-page]]
+     [mission-brief-dialog]
+     [mission-rate-dialog]
+     ;; Sentinel element - only shows when app is fully loaded and not in loading state
+     (when (and (not loading?) (seq missions))
+       [:div#app-loaded-sentinel {:style {:position "absolute" :bottom "10px" :right "10px" :font-size "10px" :opacity "0.5" :color (:text-secondary colors)}}
+        "<!-- AVIATION_MISSIONS_APP_FULLY_LOADED -->"])]))
 
 (defn ^:dev/after-load mount-root []
   (js/console.log "🔧 MOUNT-ROOT: Starting mount process...")
   (let [root-el (.getElementById js/document "app")]
     (js/console.log "🔧 MOUNT-ROOT: Found app element:" root-el)
-    (js/console.log "🔧 MOUNT-ROOT: App element innerHTML before unmount:" (.-innerHTML root-el))
-
-    (js/console.log "🔧 MOUNT-ROOT: Unmounting existing component...")
-    (rdom/unmount-component-at-node root-el)
-    (js/console.log "🔧 MOUNT-ROOT: App element innerHTML after unmount:" (.-innerHTML root-el))
+    (js/console.log "🔧 MOUNT-ROOT: App element innerHTML before render:" (.-innerHTML root-el))
 
     (js/console.log "🔧 MOUNT-ROOT: Rendering new component...")
     (rdom/render [app] root-el)
