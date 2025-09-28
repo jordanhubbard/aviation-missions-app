@@ -1,4 +1,4 @@
-# Multi-stage build for Clojure backend + ClojureScript frontend
+# Multi-stage build for Clojure backend + Pure JavaScript frontend
 FROM alpine:3.22 AS base
 
 # Install system dependencies
@@ -39,15 +39,9 @@ WORKDIR /app
 FROM base AS frontend-build
 WORKDIR /app/frontend
 
-# Copy package files first for better caching
+# Copy package files (minimal for pure JavaScript)
 COPY frontend/package*.json ./
-RUN npm install --omit=dev
-
-# Copy shadow-cljs config for dependency resolution
-COPY frontend/shadow-cljs.edn ./
-
-# Install shadow-cljs dependencies (this will be cached unless dependencies change)
-RUN npm install
+RUN echo "Pure JavaScript build - no dependencies to install"
 
 # Copy source code last (changes most frequently)
 COPY frontend/src ./src/
