@@ -1,71 +1,87 @@
 (ns aviation-missions.core
-  (:require
-   [reagent.core :as r]
-   [reagent.dom.client :as rdom]
-   [aviation-missions.config :as config]
-   [aviation-missions.theme :refer [current-colors]]
-   [aviation-missions.state :as state]
-   [aviation-missions.api :as api]
-   [aviation-missions.pages :refer [navigation missions-page]]
-   [aviation-missions.dialogs :refer [mission-brief-dialog mission-rate-dialog]]))
+  "Main application entry point and initialization."
+  (:require [reagent.dom :as rdom]
+            [aviation-missions.ui.pages.dashboard :as dashboard]
+            [aviation-missions.utils.logging :as log]
+            [aviation-missions.config.settings :as settings]
+            [aviation-missions.test]
+            [aviation-missions.simple-test]
+            [aviation-missions.minimal-test]))
 
-(defn app []
-  (let [colors (current-colors)
-        missions (state/get-missions)
-        loading? (:loading @state/app-state)]
-    [:div.app {:style {:background-color (:bg-primary colors) :min-height "100vh" :color (:text-primary colors)}}
-     [navigation]
-     [:main.main-content
-      [missions-page]]
-     [mission-brief-dialog]
-     [mission-rate-dialog]
-     ;; Sentinel element - only shows when app is fully loaded and not in loading state
-     (when (and (not loading?) (seq missions))
-       [:div#app-loaded-sentinel {:style {:position "absolute" :bottom "10px" :right "10px" :font-size "10px" :opacity "0.5" :color (:text-secondary colors)}}
-        "<!-- AVIATION_MISSIONS_APP_FULLY_LOADED -->"])]))
+(enable-console-print!)
 
-(defonce root-atom (atom nil))
+;; Immediate execution when namespace loads
+(.log js/console "📦 CORE NAMESPACE LOADING")
+(println "📦 CORE NAMESPACE LOADING")
 
-(defn ^:dev/after-load mount-root []
-  (js/console.log "🔧 MOUNT-ROOT: Starting mount process...")
-  (let [root-el (.getElementById js/document "app")]
-    (js/console.log "🔧 MOUNT-ROOT: Found app element:" root-el)
-    (js/console.log "🔧 MOUNT-ROOT: App element innerHTML before render:" (.-innerHTML root-el))
+;; Create immediate visual indicator that core namespace loaded
+(when (.-body js/document)
+  (let [ns-div (.createElement js/document "div")]
+    (set! (.-innerHTML ns-div) "📦 CORE NS LOADED!")
+    (set! (.-id ns-div) "core-namespace-loaded")
+    (set! (.-style ns-div) "position:fixed;top:10px;left:10px;background:blue;color:white;padding:10px;z-index:99999;")
+    (.appendChild (.-body js/document) ns-div)))
 
-    (js/console.log "🔧 MOUNT-ROOT: Creating/getting React root...")
-    (let [react-root (or @root-atom
-                         (let [new-root (rdom/create-root root-el)]
-                           (reset! root-atom new-root)
-                           new-root))]
-      (js/console.log "🔧 MOUNT-ROOT: Rendering new component...")
-      (rdom/render react-root [app])
-      (js/console.log "🔧 MOUNT-ROOT: App element innerHTML after render:" (.-innerHTML root-el))
-      (js/console.log "🔧 MOUNT-ROOT: Mount process complete!"))))
+(defn app
+  "Root application component"
+  []
+  [:div {:style {:min-height "100vh"
+                 :background-color "#f8fafc"
+                 :font-family "system-ui, -apple-system, sans-serif"}}
+   [dashboard/dashboard]])
 
-(defn init! []
-  (js/console.log "🏠 FRONTEND STARTUP: Aviation Missions UI initializing...")
-  (js/console.log "Debug mode:" config/debug?)
-  (js/console.log "API base URL:" config/api-base-url)
-  (js/console.log "Initial app state:" (pr-str @state/app-state))
+(defn mount-app
+  "Mount the application to the DOM"
+  []
+  (log/log "Mounting Aviation Missions application...")
+  (let [root-element (.getElementById js/document "app")]
+    (if root-element
+      (do
+        (rdom/render [app] root-element)
+        (log/log-success "Application mounted successfully"))
+      (log/log-error "Could not find #app element to mount application"))))
 
-  (mount-root)
-  (js/console.log "Root mounted successfully")
+(defn init
+  "Initialize the application"
+  []
+  (try
+    (.log js/console "🚀 INIT FUNCTION CALLED - Starting initialization")
+    (println "🚀 INIT FUNCTION CALLED - Starting initialization")
 
-  ;; Set a test mission to see if sentinel works
-  (js/console.log "Setting test mission to check sentinel...")
-  (let [test-missions [{:id 1
-                        :title "Test Mission"
-                        :category "General Training"
-                        :difficulty 5
-                        :pilot_experience "Intermediate (100-500 hours)"
-                        :objective "Test the application loading"
-                        :mission_description "This is a test mission to verify the app loads correctly"
-                        :why_description "We need to ensure all components render properly"}]]
-    (swap! state/app-state assoc
-           :missions test-missions
-           :filtered-missions test-missions
-           :loading false))
-  (js/console.log "Test mission set, app state:" (pr-str @state/app-state))
+    ;; Create immediate visual indicator
+    (let [init-div (.createElement js/document "div")]
+      (set! (.-innerHTML init-div) "🚀 INIT FUNCTION CALLED!")
+      (set! (.-id init-div) "init-function-called")
+      (set! (.-style init-div) "position:fixed;top:10px;right:10px;background:orange;color:black;padding:10px;z-index:99999;")
+      (.appendChild (.-body js/document) init-div))
 
-  (api/check-admin-status)
-  (api/fetch-missions))
+    (log/log "Initializing Aviation Missions application")
+    (log/log "Debug mode:" settings/debug?)
+    (log/log "API base URL:" settings/api-base-url)
+
+    ;; Mount the application
+    (.log js/console "🚀 INIT: About to mount app")
+    (mount-app)
+    (.log js/console "🚀 INIT: App mounted")
+
+    ;; Initialize the dashboard
+    (.log js/console "🚀 INIT: About to initialize dashboard")
+    (dashboard/init-dashboard!)
+    (.log js/console "🚀 INIT: Dashboard initialized")
+
+    (log/log-success "Application initialization complete")
+    (.log js/console "🚀 INIT FUNCTION COMPLETED SUCCESSFULLY")
+
+  (catch js/Error e
+    (.error js/console "🚨 ERROR IN INIT FUNCTION:" e)
+    (println "🚨 ERROR IN INIT FUNCTION:" e)
+
+    ;; Create error indicator
+    (let [error-div (.createElement js/document "div")]
+      (set! (.-innerHTML error-div) (str "🚨 INIT ERROR: " (.-message e)))
+      (set! (.-id error-div) "init-error")
+      (set! (.-style error-div) "position:fixed;top:50px;right:10px;background:red;color:white;padding:10px;z-index:99999;")
+      (.appendChild (.-body js/document) error-div)))))
+
+;; Remove the duplicate init call - let Shadow-CLJS handle it
+;; (init)

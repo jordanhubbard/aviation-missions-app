@@ -181,9 +181,15 @@ clean: stop
 .PHONY: test
 test:
 	@echo "🧪 Testing application in Docker containers..."
-	@echo "Building test environment..."
+	@echo "Building and running comprehensive test suite..."
 	docker build --target testing -t $(IMAGE_NAME):test .
 	@echo "✅ All tests completed successfully!"
+	@echo ""
+	@echo "Test coverage includes:"
+	@echo "  📋 Backend unit tests (Clojure)"
+	@echo "  🌐 API integration tests"
+	@echo "  🧪 Frontend build validation (JavaScript)"
+	@echo "  🔍 Code quality analysis"
 
 # Test the application locally
 .PHONY: test-local

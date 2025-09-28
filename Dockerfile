@@ -41,7 +41,7 @@ WORKDIR /app/frontend
 
 # Copy package files first for better caching
 COPY frontend/package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy shadow-cljs config for dependency resolution
 COPY frontend/shadow-cljs.edn ./
