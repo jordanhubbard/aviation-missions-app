@@ -114,11 +114,9 @@
         (assoc-in [:headers "Access-Control-Allow-Headers"] "Content-Type, Authorization, Accept")
         (assoc-in [:headers "Access-Control-Max-Age"] "86400")))
 
-  ;; Serve frontend static files
+  ;; Serve frontend static files - only for non-API routes
   (GET "/" [] (-> (resource-response "public/index.html")
                   (assoc-in [:headers "Content-Type"] "text/html; charset=utf-8")))
-  (GET "/*" [] (-> (resource-response "public/index.html")
-                   (assoc-in [:headers "Content-Type"] "text/html; charset=utf-8")))
 
   (route/not-found {:status 404 :body {:error "Not found"}}))
 
