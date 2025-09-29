@@ -30,21 +30,11 @@ help:
 	@echo "  logs         - View application logs (blocking)"
 	@echo "  clean        - Complete cleanup: stop, remove containers, images, and files"
 	@echo "  build        - Build the Docker image"
-	@echo "  test         - Run tests in Docker containers (recommended for CI/CD)"
-	@echo "  test-local   - Test the application locally (requires local setup)"
+	@echo "  test         - Run tests in Docker containers"
 	@echo ""
 	@echo "  Code Quality & Analysis:"
 	@echo "  lint         - Comprehensive analysis (clj-kondo + ESLint with React support)"
 	@echo "  lint-fast    - Fast syntax checking (clj-kondo + Node.js syntax validation)"
-	@echo "  lint-eastwood- Deep static analysis with eastwood (requires local setup)"
-	@echo ""
-	@echo "  Database Management:"
-	@echo "  backup       - Create a backup of the database"
-	@echo "  restore      - Restore database from backup (requires BACKUP_FILE)"
-	@echo ""
-	@echo "  Local Development (requires local Clojure setup for backend):"
-	@echo "  dev-backend  - Start only the Clojure backend for development"
-	@echo "  dev-frontend - Start only the JavaScript frontend for development"
 	@echo ""
 	@echo "Port Configuration:"
 	@echo "  PORT = $(PORT) (Main application port)"
@@ -55,9 +45,6 @@ help:
 	@echo "  make lint                     # Comprehensive code analysis"
 	@echo "  make lint-fast                # Quick syntax check"
 	@echo "  PORT=9000 make start          # Use custom port"
-	@echo ""
-	@echo "Note: Development mode requires docker-compose.dev.yml (not included)"
-	@echo "      For local development, use dev-backend and dev-frontend separately"
 
 # Build the Docker image
 .PHONY: build
@@ -103,17 +90,6 @@ lint-fast:
 		find frontend/resources/public/js -name "*.js" -not -path "*/cljs-runtime/*" -exec node -c {} \; && \
 		echo "✅ JavaScript syntax valid"'
 
-# Run eastwood static analysis (requires local setup)
-.PHONY: lint-eastwood
-lint-eastwood:
-	@echo "🔬 Running eastwood static analysis..."
-	@if [ -f backend/deps.edn ]; then \
-		cd backend && clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}'; \
-	else \
-		echo "Creating deps.edn for eastwood..."; \
-		echo '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' > backend/deps.edn; \
-		cd backend && clojure -Sdeps '{:deps {jonase/eastwood {:mvn/version "1.4.2"}}}' -M -m eastwood.lint '{:source-paths ["src"] :exclude-linters [:constant-test :wrong-arity]}'; \
-	fi
 
 # Start the application in production mode
 .PHONY: start
@@ -127,37 +103,6 @@ start: build
 	@echo ""
 	@echo "To view logs: make logs"
 	@echo "To stop: make stop"
-
-# Start the application in development mode
-.PHONY: dev
-dev:
-	@echo "❌ Development mode requires docker-compose.dev.yml which is not included."
-	@echo ""
-	@echo "For local development, use:"
-	@echo "  make dev-backend   # Start backend (requires Leiningen)"
-	@echo "  make dev-frontend  # Start frontend (requires Node.js)"
-	@echo ""
-	@echo "For production deployment, use:"
-	@echo "  make start         # Full Docker deployment"
-	@exit 1
-
-# Start only the backend for development
-.PHONY: dev-backend
-dev-backend:
-	@echo "☕ Starting Clojure backend for development..."
-	cd backend && lein run
-
-# Start only the frontend for development
-.PHONY: dev-frontend
-dev-frontend:
-	@echo "🌐 Starting JavaScript frontend for development..."
-	@echo "Frontend uses pure JavaScript - serve static files from frontend/resources/public/"
-	@echo "Example: python3 -m http.server 3000 --directory frontend/resources/public"
-	@if command -v python3 >/dev/null 2>&1; then \
-		cd frontend/resources/public && python3 -m http.server 3000; \
-	else \
-		echo "Python3 not available. Please serve frontend/resources/public/ manually."; \
-	fi
 
 # Stop the running application
 .PHONY: stop
@@ -207,50 +152,3 @@ test:
 	@echo "  🌐 API integration tests"
 	@echo "  🧪 Frontend syntax validation (JavaScript)"
 	@echo "  🔍 Code quality analysis"
-
-# Test the application locally
-.PHONY: test-local
-test-local:
-	@echo "🧪 Testing application locally..."
-	@echo "Testing backend build..."
-	cd backend && lein test
-	@echo "Testing frontend JavaScript syntax..."
-	docker run --rm -v $(PWD):/workspace -w /workspace node:18-alpine sh -c '\
-		find frontend/resources/public/js -name "*.js" -not -path "*/cljs-runtime/*" -exec node -c {} \; && \
-		echo "✅ JavaScript syntax valid"'
-	@echo "✅ Local tests completed!"
-
-# Create a backup of the database
-.PHONY: backup
-backup:
-	@echo "🗄️  Creating database backup..."
-	@if [ ! -f "./data/aviation-missions.mv.db" ]; then \
-		echo "❌ No database found. Make sure the application has been started at least once."; \
-		exit 1; \
-	fi
-	@./scripts/backup-database.sh
-
-# Restore database from backup
-.PHONY: restore
-restore:
-	@echo "🔄 Restoring database from backup..."
-	@if [ -z "$(BACKUP_FILE)" ]; then \
-		echo "❌ Please specify BACKUP_FILE. Usage: make restore BACKUP_FILE=backups/aviation-missions-backup-YYYYMMDD_HHMMSS.tar.gz"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(BACKUP_FILE)" ]; then \
-		echo "❌ Backup file not found: $(BACKUP_FILE)"; \
-		exit 1; \
-	fi
-	@echo "⚠️  This will overwrite the current database. Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
-	@echo "🛑 Stopping application..."
-	@$(MAKE) stop
-	@echo "📦 Extracting backup..."
-	@mkdir -p ./temp-restore
-	@tar -xzf "$(BACKUP_FILE)" -C ./temp-restore/
-	@BACKUP_NAME=$$(basename "$(BACKUP_FILE)" .tar.gz) && \
-		cp ./temp-restore/$$BACKUP_NAME/* ./data/ && \
-		rm -rf ./temp-restore
-	@echo "🚀 Starting application..."
-	@$(MAKE) start
-	@echo "✅ Database restored successfully!"
