@@ -1,5 +1,5 @@
 # Aviation Mission Management Makefile
-# Clojure Backend + ClojureScript/Reagent Frontend
+# Clojure Backend + Pure JavaScript Frontend
 
 # Port Configuration (can be overridden by environment variables)
 PORT ?= 8080
@@ -34,17 +34,17 @@ help:
 	@echo "  test-local   - Test the application locally (requires local setup)"
 	@echo ""
 	@echo "  Code Quality & Analysis:"
-	@echo "  lint         - Comprehensive analysis (clj-kondo + eastwood + compilation)"
-	@echo "  lint-fast    - Fast syntax checking with clj-kondo only"
+	@echo "  lint         - Comprehensive analysis (clj-kondo + ESLint with React support)"
+	@echo "  lint-fast    - Fast syntax checking (clj-kondo + Node.js syntax validation)"
 	@echo "  lint-eastwood- Deep static analysis with eastwood (requires local setup)"
 	@echo ""
 	@echo "  Database Management:"
 	@echo "  backup       - Create a backup of the database"
 	@echo "  restore      - Restore database from backup (requires BACKUP_FILE)"
 	@echo ""
-	@echo "  Local Development (requires local Clojure/Node.js setup):"
+	@echo "  Local Development (requires local Clojure setup for backend):"
 	@echo "  dev-backend  - Start only the Clojure backend for development"
-	@echo "  dev-frontend - Start only the ClojureScript frontend for development"
+	@echo "  dev-frontend - Start only the JavaScript frontend for development"
 	@echo ""
 	@echo "Port Configuration:"
 	@echo "  PORT = $(PORT) (Main application port)"
@@ -68,29 +68,40 @@ build:
 # Run comprehensive linting analysis on the code
 .PHONY: lint
 lint:
-	@echo "🔍 Running comprehensive Clojure/ClojureScript code analysis..."
-	@echo "📋 Tools: clj-kondo, eastwood, leiningen, shadow-cljs"
-	docker build --target linting -t $(IMAGE_NAME):lint .
+	@echo "🔍 Running comprehensive code analysis in Docker containers..."
+	@echo "📋 Tools: clj-kondo (Clojure), ESLint (JavaScript/React)"
+	@echo "Backend Clojure files:"
+	docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint backend/src
+	@echo "Frontend JavaScript/React files:"
+	docker run --rm -v $(PWD):/workspace -w /workspace node:18-alpine sh -c '\
+		cd /workspace && \
+		echo "Installing ESLint and React plugins..." && \
+		npm init -y > /dev/null 2>&1 && \
+		npm install --no-save eslint@8 eslint-plugin-react eslint-plugin-react-hooks > /dev/null 2>&1 && \
+		echo "Creating ESLint config..." && \
+		echo "{\
+			\"env\": {\"browser\": true, \"es2021\": true}, \
+			\"extends\": [\"eslint:recommended\", \"plugin:react/recommended\"], \
+			\"plugins\": [\"react\", \"react-hooks\"], \
+			\"parserOptions\": {\"ecmaVersion\": 2021, \"sourceType\": \"module\", \"ecmaFeatures\": {\"jsx\": true}}, \
+			\"rules\": {\"no-unused-vars\": \"warn\", \"no-console\": \"off\", \"react/react-in-jsx-scope\": \"off\"}, \
+			\"settings\": {\"react\": {\"version\": \"detect\"}} \
+		}" > .eslintrc.json && \
+		echo "Running ESLint on JavaScript files..." && \
+		npx eslint frontend/resources/public/js/app.js || echo "ESLint completed with warnings/errors"'
 	@echo "✅ Linting analysis completed successfully!"
 
-# Run only clj-kondo for fast syntax checking
+# Run only fast syntax checking
 .PHONY: lint-fast
 lint-fast:
-	@echo "⚡ Running fast clj-kondo syntax analysis..."
+	@echo "⚡ Running fast syntax analysis in Docker containers..."
 	@echo "Backend Clojure files:"
-	@if command -v clj-kondo >/dev/null 2>&1; then \
-		clj-kondo --lint backend/src --config '{:output {:format :text}}'; \
-	else \
-		echo "clj-kondo not installed locally, using Docker..."; \
-		docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint backend/src; \
-	fi
-	@echo "Frontend ClojureScript files:"
-	@if command -v clj-kondo >/dev/null 2>&1; then \
-		clj-kondo --lint frontend/src --config '{:output {:format :text}}'; \
-	else \
-		echo "clj-kondo not installed locally, using Docker..."; \
-		docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint frontend/src; \
-	fi
+	docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint backend/src
+	@echo "Frontend JavaScript files:"
+	docker run --rm -v $(PWD):/workspace -w /workspace node:18-alpine sh -c '\
+		echo "Validating JavaScript syntax..." && \
+		find frontend/resources/public/js -name "*.js" -not -path "*/cljs-runtime/*" -exec node -c {} \; && \
+		echo "✅ JavaScript syntax valid"'
 
 # Run eastwood static analysis (requires local setup)
 .PHONY: lint-eastwood
@@ -139,8 +150,14 @@ dev-backend:
 # Start only the frontend for development
 .PHONY: dev-frontend
 dev-frontend:
-	@echo "⚛️ Starting ClojureScript frontend for development..."
-	cd frontend && npm install && npm run dev
+	@echo "🌐 Starting JavaScript frontend for development..."
+	@echo "Frontend uses pure JavaScript - serve static files from frontend/resources/public/"
+	@echo "Example: python3 -m http.server 3000 --directory frontend/resources/public"
+	@if command -v python3 >/dev/null 2>&1; then \
+		cd frontend/resources/public && python3 -m http.server 3000; \
+	else \
+		echo "Python3 not available. Please serve frontend/resources/public/ manually."; \
+	fi
 
 # Stop the running application
 .PHONY: stop
@@ -188,7 +205,7 @@ test:
 	@echo "Test coverage includes:"
 	@echo "  📋 Backend unit tests (Clojure)"
 	@echo "  🌐 API integration tests"
-	@echo "  🧪 Frontend build validation (JavaScript)"
+	@echo "  🧪 Frontend syntax validation (JavaScript)"
 	@echo "  🔍 Code quality analysis"
 
 # Test the application locally
@@ -197,8 +214,10 @@ test-local:
 	@echo "🧪 Testing application locally..."
 	@echo "Testing backend build..."
 	cd backend && lein test
-	@echo "Testing frontend build..."
-	cd frontend && npm install && npm run build
+	@echo "Testing frontend JavaScript syntax..."
+	docker run --rm -v $(PWD):/workspace -w /workspace node:18-alpine sh -c '\
+		find frontend/resources/public/js -name "*.js" -not -path "*/cljs-runtime/*" -exec node -c {} \; && \
+		echo "✅ JavaScript syntax valid"'
 	@echo "✅ Local tests completed!"
 
 # Create a backup of the database

@@ -294,7 +294,6 @@ class AviationMissionApp {
     renderMissionCard(mission) {
         const difficultyLevel = mission.difficulty || 1;
         const challenges = this.analyzeMissionChallenges(mission);
-        const createdDate = this.formatDate(mission.created_at);
         const experienceLevel = this.formatExperienceLevel(mission.pilot_experience);
 
         return `
