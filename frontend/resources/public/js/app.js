@@ -41,8 +41,16 @@ class AviationMissionApp {
         app.innerHTML = `
             <div class="app-container">
                 <header class="app-header">
-                    <h1>✈️ Aviation Mission Management</h1>
-                    <p>Manage and track aviation missions</p>
+                    <div class="header-content">
+                        <div class="header-text">
+                            <h1>✈️ Aviation Mission Management</h1>
+                            <p>Manage and track aviation missions</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="app.showNewMissionForm()">Create Mission</button>
+                            <button class="btn btn-secondary" onclick="app.showAdminLogin()">Admin Login</button>
+                        </div>
+                    </div>
                 </header>
 
                 <div class="filters-panel" id="filtersPanel" style="display: none;">
@@ -499,7 +507,184 @@ class AviationMissionApp {
 
     showNewMissionForm() {
         console.log('➕ Show new mission form');
-        // TODO: Implement new mission form
+
+        const modalHTML = `
+            <div class="modal-overlay" id="missionFormModal">
+                <div class="modal-content mission-form-modal">
+                    <div class="modal-header">
+                        <h2>✈️ Create New Mission</h2>
+                        <button class="modal-close" onclick="app.closeModal()">&times;</button>
+                    </div>
+                    <form id="newMissionForm" class="mission-form">
+                        <div class="form-section">
+                            <h3>Basic Information</h3>
+
+                            <div class="form-group">
+                                <label for="title">Mission Title *</label>
+                                <input type="text" id="title" name="title" required maxlength="255"
+                                    placeholder="e.g., Class B Ops: LAX Bravo Transition">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="category">Category *</label>
+                                    <select id="category" name="category" required>
+                                        <option value="">Select a category</option>
+                                        <option value="Training">Training</option>
+                                        <option value="Proficiency">Proficiency</option>
+                                        <option value="Cross-Country">Cross-Country</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="difficulty">Difficulty (1-10) *</label>
+                                    <input type="number" id="difficulty" name="difficulty" required
+                                        min="1" max="10" placeholder="1-10">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="pilot_experience">Pilot Experience</label>
+                                    <select id="pilot_experience" name="pilot_experience">
+                                        <option value="">Not specified</option>
+                                        <option value="Beginner (< 100 hours)">Beginner (< 100 hours)</option>
+                                        <option value="Intermediate (100-500 hours)">Intermediate (100-500 hours)</option>
+                                        <option value="Advanced (500+ hours)">Advanced (500+ hours)</option>
+                                        <option value="Commercial/ATP">Commercial/ATP</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Mission Details</h3>
+
+                            <div class="form-group">
+                                <label for="objective">Learning Objective *</label>
+                                <textarea id="objective" name="objective" required rows="2"
+                                    placeholder="Primary learning objective for this mission"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="mission_description">Mission Description *</label>
+                                <textarea id="mission_description" name="mission_description" required rows="4"
+                                    placeholder="Detailed description of what the pilot will do"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="why_description">Why This Mission? *</label>
+                                <textarea id="why_description" name="why_description" required rows="3"
+                                    placeholder="Educational rationale - why this mission is valuable"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Route Information</h3>
+
+                            <div class="form-group">
+                                <label for="route">Route Description</label>
+                                <input type="text" id="route" name="route" maxlength="500"
+                                    placeholder="e.g., KPAO → coastal route south → LAX Bravo → KTOA">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="suggested_route">Suggested Waypoints</label>
+                                <input type="text" id="suggested_route" name="suggested_route" maxlength="500"
+                                    placeholder="e.g., KPAO KWVI KHHR KTOA">
+                                <small>Use ICAO airport codes separated by spaces</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Additional Information</h3>
+
+                            <div class="form-group">
+                                <label for="special_challenges">Special Challenges</label>
+                                <input type="text" id="special_challenges" name="special_challenges"
+                                    placeholder="e.g., Mountain Flying, High Altitude, Night Operations">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notes">Notes & Tips</label>
+                                <textarea id="notes" name="notes" rows="3"
+                                    placeholder="Additional notes, tips, and considerations for pilots"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Mission</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const form = document.getElementById('newMissionForm');
+        form.addEventListener('submit', (e) => this.handleMissionSubmit(e));
+    }
+
+    closeModal() {
+        const modal = document.getElementById('missionFormModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async handleMissionSubmit(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        // Build mission object
+        const mission = {
+            title: formData.get('title'),
+            category: formData.get('category'),
+            difficulty: parseInt(formData.get('difficulty')),
+            objective: formData.get('objective'),
+            mission_description: formData.get('mission_description'),
+            why_description: formData.get('why_description'),
+            route: formData.get('route') || null,
+            suggested_route: formData.get('suggested_route') || null,
+            pilot_experience: formData.get('pilot_experience') || null,
+            special_challenges: formData.get('special_challenges') || null,
+            notes: formData.get('notes') || null
+        };
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/missions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mission)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to create mission: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Mission created:', result);
+
+            // Close modal and reload missions
+            this.closeModal();
+            await this.loadMissions();
+            this.render();
+
+            alert('Mission created successfully!');
+        } catch (error) {
+            console.error('❌ Failed to create mission:', error);
+            alert('Failed to create mission: ' + error.message);
+        }
+    }
+
+    showAdminLogin() {
+        console.log('🔐 Show admin login');
+        // TODO: Implement admin login
     }
 }
 
