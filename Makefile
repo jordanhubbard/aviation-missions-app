@@ -112,10 +112,17 @@ stop:
 	-docker compose -f $(DEV_COMPOSE_FILE) down 2>/dev/null || true
 	@echo "✅ Application stopped successfully!"
 
-# Restart the application (stop + start)
+# Restart the application (stop + rebuild + start)
 .PHONY: restart
-restart: stop start
-	@echo "🔄 Application restarted successfully!"
+restart: stop build
+	@echo "🚀 Starting Aviation Mission Management (Production)..."
+	docker compose -f $(COMPOSE_FILE) up -d
+	@echo "✅ Application restarted successfully!"
+	@echo ""
+	@echo "🌐 Main Application: http://localhost:$(PORT)"
+	@echo "📚 API Documentation: http://localhost:$(PORT)/api/swagger.json"
+	@echo ""
+	@echo "To view logs: make logs"
 
 # View application logs (blocking)
 .PHONY: logs

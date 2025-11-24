@@ -110,7 +110,9 @@
         why_description TEXT NOT NULL,
         notes TEXT,
         route VARCHAR(500),
+        suggested_route VARCHAR(500),
         pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
+        special_challenges TEXT DEFAULT '',
         submitter_name VARCHAR(100) NOT NULL,
         submitter_email VARCHAR(255),
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -123,6 +125,20 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE submissions ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
+    (catch Exception _e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE submissions ADD COLUMN suggested_route VARCHAR(500)"])
+    (catch Exception _e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE submissions ADD COLUMN special_challenges TEXT DEFAULT ''"])
     (catch Exception _e
       ;; Column already exists, ignore
       ))
@@ -147,7 +163,9 @@
         why_description TEXT NOT NULL,
         notes TEXT,
         route VARCHAR(500),
+        suggested_route VARCHAR(500),
         pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)',
+        special_challenges TEXT DEFAULT '',
         submitter_name VARCHAR(100) NOT NULL,
         submitter_email VARCHAR(255),
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -161,6 +179,20 @@
   (try
     (jdbc/execute! db-spec
       ["ALTER TABLE mission_updates ADD COLUMN pilot_experience VARCHAR(50) DEFAULT 'Beginner (< 100 hours)'"])
+    (catch Exception _e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE mission_updates ADD COLUMN suggested_route VARCHAR(500)"])
+    (catch Exception _e
+      ;; Column already exists, ignore
+      ))
+  
+  (try
+    (jdbc/execute! db-spec
+      ["ALTER TABLE mission_updates ADD COLUMN special_challenges TEXT DEFAULT ''"])
     (catch Exception _e
       ;; Column already exists, ignore
       ))
@@ -296,7 +328,7 @@
       ;; Create mission from submission
       (create-mission! (select-keys submission [:title :category :difficulty :objective 
                                                 :mission_description :why_description :notes :route
-                                                :pilot_experience]))
+                                                :suggested_route :special_challenges :pilot_experience]))
       ;; Update submission status
       (jdbc/update! db-spec :submissions 
         {:status "approved" :reviewed_at (coerce/to-timestamp (time/now))}
