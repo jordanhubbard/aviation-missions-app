@@ -1,79 +1,51 @@
 version: 2
 updates:
-  # Clojure/Leiningen dependencies (backend)
-  - package-ecosystem: "maven"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "jordanhubbard"
-    assignees:
-      - "jordanhubbard"
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "backend"
-      - "security"
-
-  # NPM dependencies (frontend)
+  # Enable version updates for npm (frontend)
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "09:00"
+      time: "06:00"
     open-pull-requests-limit: 5
     reviewers:
       - "jordanhubbard"
-    assignees:
-      - "jordanhubbard"
-    commit-message:
-      prefix: "deps"
-      include: "scope"
     labels:
       - "dependencies"
       - "frontend"
-      - "security"
-
-  # Docker dependencies
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    
+  # Monitor Docker dependencies
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "tuesday"
-      time: "09:00"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
     reviewers:
       - "jordanhubbard"
-    assignees:
-      - "jordanhubbard"
-    commit-message:
-      prefix: "docker"
-      include: "scope"
     labels:
       - "dependencies"
       - "docker"
-      - "security"
-
-  # GitHub Actions dependencies
+    commit-message:
+      prefix: "chore(deps)"
+  
+  # Monitor GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
       day: "monday"
-      time: "09:00"
-    reviewers:
-      - "jordanhubbard"
-    assignees:
-      - "jordanhubbard"
-    commit-message:
-      prefix: "ci"
-      include: "scope"
+      time: "06:00"
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "github-actions"
       - "ci/cd"
+    commit-message:
+      prefix: "chore(deps)"
