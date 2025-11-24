@@ -1,7 +1,8 @@
 # ✈️ Aviation Mission Management System
 
 [![CI/CD Pipeline](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml)
-[![Security Scan](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/jordanhubbard/aviation-missions-app/security)
+[![PR Validation](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/pr-check.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/pr-check.yml)
+[![Nightly Checks](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/nightly.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/nightly.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/jordanhubbard/aviation-missions-app)
 
@@ -211,6 +212,80 @@ The application is designed for easy deployment on various cloud platforms:
 | `ENVIRONMENT` | `production` | Runtime environment |
 
 **Note**: In the current setup, both frontend and API are served on the same port (8080), with API endpoints under `/api/*` path.
+
+## 🔄 CI/CD Pipeline
+
+This project includes a comprehensive CI/CD pipeline powered by GitHub Actions:
+
+### Automated Workflows
+
+- **🚀 CI/CD Pipeline** (`ci.yml`): Runs on every push and pull request
+  - Code quality analysis (linting with clj-kondo)
+  - Backend unit tests
+  - Docker build and integration tests
+  - Multi-platform image builds (amd64, arm64)
+  - Security scanning with Trivy
+  - Automatic deployment (main branch only)
+
+- **🔍 Pull Request Validation** (`pr-check.yml`): Validates PRs
+  - Conventional commit format checking
+  - Fast compilation and critical tests
+  - Build size monitoring
+  - Changes summary generation
+
+- **🎉 Release Pipeline** (`release.yml`): Automated releases
+  - Triggered by version tags (e.g., `v1.0.0`)
+  - Automatic GitHub Release creation
+  - Docker image publishing with semantic versioning
+  - Release testing and validation
+
+- **🌙 Nightly Checks** (`nightly.yml`): Daily maintenance
+  - Dependency audits and security checks
+  - Extended test suites
+  - Database migration testing
+  - Image size tracking
+  - Long-running health monitoring
+
+### Creating a Release
+
+```bash
+# Create and push a new version tag
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+
+# The pipeline automatically:
+# 1. Creates a GitHub Release with notes
+# 2. Builds and pushes Docker images
+# 3. Tags: v1.0.0, 1.0, 1, latest
+```
+
+### Pull Request Guidelines
+
+Use conventional commit format for PR titles:
+```
+<type>(<scope>): <description>
+
+Examples:
+  feat: add mission search functionality
+  fix(api): resolve mission creation bug
+  docs: update API documentation
+```
+
+Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`
+
+### Container Registry
+
+Docker images are published to GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/jordanhubbard/aviation-missions-app:latest
+
+# Pull a specific version
+docker pull ghcr.io/jordanhubbard/aviation-missions-app:v1.0.0
+```
+
+For detailed CI/CD documentation, see [.github/CICD.md](.github/CICD.md).
 
 ## 💾 Data Management
 

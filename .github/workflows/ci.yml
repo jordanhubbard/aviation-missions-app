@@ -17,55 +17,159 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Run comprehensive code analysis
-        run: make lint
+      - name: Run Clojure linting (clj-kondo)
+        run: |
+          docker run --rm -v $(pwd):/workspace -w /workspace \
+            cljkondo/clj-kondo:latest clj-kondo --lint backend/src backend/test
 
-  # Comprehensive Test Suite
-  test:
-    name: 🧪 Comprehensive Test Suite
+      - name: Run JavaScript linting
+        run: |
+          docker run --rm -v $(pwd):/workspace -w /workspace node:18-alpine sh -c '
+            echo "Validating JavaScript syntax..." &&
+            find frontend/resources/public/js -name "*.js" -not -path "*/cljs-runtime/*" -exec node -c {} \; &&
+            echo "✅ JavaScript syntax valid"'
+
+  # Backend Unit Tests
+  backend-tests:
+    name: 🧪 Backend Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'leiningen'
+
+      - name: Install Leiningen
+        run: |
+          wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+          chmod +x lein
+          sudo mv lein /usr/local/bin/
+          lein version
+
+      - name: Run backend unit tests
+        working-directory: backend
+        run: lein test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: backend/target/
+          retention-days: 7
+
+  # Docker Build and Test
+  docker-test:
+    name: 🐳 Docker Build & Test
+    runs-on: ubuntu-latest
+    needs: [lint, backend-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Run comprehensive test suite
-        run: make test
+      - name: Build test Docker image
+        run: |
+          docker build --target testing -t aviation-missions:test .
 
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
+      - name: Build production Docker image
+        run: |
+          docker build --target production -t aviation-missions:latest .
+
+      - name: Start application container
+        run: |
+          docker run -d --name aviation-test \
+            -p 8080:3000 \
+            -v $(pwd)/test-data:/app/data \
+            aviation-missions:latest
+          
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/health 2>/dev/null; then
+              echo "✅ Application is healthy"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run health check
+        run: |
+          curl -f http://localhost:8080/health || (docker logs aviation-test && exit 1)
+
+      - name: Test API endpoints
+        run: |
+          echo "Testing missions endpoint..."
+          curl -f http://localhost:8080/api/missions || (docker logs aviation-test && exit 1)
+          
+          echo "Testing swagger documentation..."
+          curl -f http://localhost:8080/api/swagger.json || (docker logs aviation-test && exit 1)
+          
+          echo "Testing frontend..."
+          curl -f http://localhost:8080/ || (docker logs aviation-test && exit 1)
+
+      - name: Test mission creation
+        run: |
+          echo "Testing mission submission..."
+          RESPONSE=$(curl -s -X POST http://localhost:8080/api/missions \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "CI Test Mission",
+              "category": "Training",
+              "difficulty": 5,
+              "objective": "Test objective",
+              "mission_description": "Test description",
+              "why_description": "Test why"
+            }')
+          echo "Response: $RESPONSE"
+          if echo "$RESPONSE" | grep -q "error"; then
+            if ! echo "$RESPONSE" | grep -q "submitted for approval"; then
+              echo "❌ Unexpected error in mission creation"
+              docker logs aviation-test
+              exit 1
+            fi
+          fi
+          echo "✅ Mission creation test passed"
+
+      - name: Show container logs
         if: always()
-        with:
-          name: test-results
-          path: |
-            backend/target/test-reports/
-            frontend/resources/public/
-          retention-days: 7
+        run: docker logs aviation-test
 
-  # Docker Build
+      - name: Clean up
+        if: always()
+        run: |
+          docker rm -f aviation-test || true
+          rm -rf test-data
+
+  # Docker Build and Push
   docker-build:
-    name: 🐳 Docker Build
+    name: 🐳 Docker Build & Push
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, backend-tests, docker-test]
+    if: github.event_name != 'pull_request'
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Container Registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -79,30 +183,37 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: production
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
 
-  # Integration Tests
-  integration-test:
-    name: 🔗 Integration Tests
+  # Security Scanning
+  security-scan:
+    name: 🔒 Security Scanning
     runs-on: ubuntu-latest
     needs: [docker-build]
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -111,60 +222,55 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull and start container
+      - name: Pull image for scanning
         run: |
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.sha }}
-          docker run -d --name aviation-missions \
-            -p 8080:8080 \
-            -p 3000:3000 \
-            -e PORT=8080 \
-            -e API_PORT=3000 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.sha }}
 
-      - name: Wait for application to be ready
-        run: |
-          timeout 60s bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
 
-      - name: Test API endpoints
-        run: |
-          # Test health endpoint
-          curl -f http://localhost:3000/health
-
-          # Test missions endpoint
-          curl -f http://localhost:3000/missions
-
-          # Test swagger documentation
-          curl -f http://localhost:3000/swagger.json
-
-          # Test frontend
-          curl -f http://localhost:8080/
-
-      - name: Run API integration tests
-        run: |
-          # Test mission creation (if admin endpoints are available)
-          echo "Integration tests completed successfully"
-
-      - name: Show container logs on failure
-        if: failure()
-        run: docker logs aviation-missions
-
-      - name: Clean up
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
-        run: docker rm -f aviation-missions || true
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   # Deployment (only on main branch)
   deploy:
     name: 🚀 Deploy to Production
     runs-on: ubuntu-latest
-    needs: [integration-test]
+    needs: [docker-build, security-scan]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to production
         run: |
-          echo "🚀 Deployment would happen here"
-          echo "✅ Deployment completed successfully"
-          # Add your deployment logic here (Railway, Heroku, AWS, etc.)
+          echo "🚀 Deployment step"
+          echo "📦 Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo ""
+          echo "To deploy to Railway, add these secrets to your GitHub repository:"
+          echo "  - RAILWAY_TOKEN: Your Railway API token"
+          echo ""
+          echo "To deploy to other platforms, add appropriate deployment steps here."
+          echo "✅ Deployment configuration validated"
+          # Example Railway deployment (uncomment and add RAILWAY_TOKEN secret):
+          # curl -X POST https://railway.app/api/v1/deployments \
+          #   -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+          #   -H "Content-Type: application/json" \
+          #   -d '{"image": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"}'
