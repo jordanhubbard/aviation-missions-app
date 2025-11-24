@@ -27,8 +27,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Ignore test files
-backend/test/
+# Test files needed for testing stage
+# backend/test/
 
 # Ignore local development files
 docker-compose.dev.yml

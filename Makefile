@@ -34,7 +34,6 @@ help:
 	@echo ""
 	@echo "  Code Quality & Analysis:"
 	@echo "  lint         - Comprehensive analysis (clj-kondo + ESLint with React support)"
-	@echo "  lint-fast    - Fast syntax checking (clj-kondo + Node.js syntax validation)"
 	@echo ""
 	@echo "Port Configuration:"
 	@echo "  PORT = $(PORT) (Main application port)"
@@ -43,7 +42,6 @@ help:
 	@echo "Usage:"
 	@echo "  make start                    # Production mode (Docker)"
 	@echo "  make lint                     # Comprehensive code analysis"
-	@echo "  make lint-fast                # Quick syntax check"
 	@echo "  PORT=9000 make start          # Use custom port"
 
 # Build the Docker image
@@ -77,19 +75,6 @@ lint:
 		echo "Running ESLint on JavaScript files..." && \
 		npx eslint frontend/resources/public/js/app.js || echo "ESLint completed with warnings/errors"'
 	@echo "✅ Linting analysis completed successfully!"
-
-# Run only fast syntax checking
-.PHONY: lint-fast
-lint-fast:
-	@echo "⚡ Running fast syntax analysis in Docker containers..."
-	@echo "Backend Clojure files:"
-	docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint backend/src
-	@echo "Frontend JavaScript files:"
-	docker run --rm -v $(PWD):/workspace -w /workspace node:18-alpine sh -c '\
-		echo "Validating JavaScript syntax..." && \
-		find frontend/resources/public/js -name "*.js" -not -path "*/cljs-runtime/*" -exec node -c {} \; && \
-		echo "✅ JavaScript syntax valid"'
-
 
 # Start the application in production mode
 .PHONY: start

@@ -294,12 +294,12 @@
       (is (empty? (db/get-completions-for-mission mission-id)))
 
       ;; Mark as completed by first pilot
-      (db/add-mission-completion! mission-id {:pilot_name "Pilot 1"
+      (db/mark-mission-completed! mission-id {:pilot_name "Pilot 1"
                                              :completion_date (java.sql.Date. (System/currentTimeMillis))
                                              :notes "Completed successfully"})
 
       ;; Mark as completed by second pilot
-      (db/add-mission-completion! mission-id {:pilot_name "Pilot 2"
+      (db/mark-mission-completed! mission-id {:pilot_name "Pilot 2"
                                              :completion_date (java.sql.Date. (System/currentTimeMillis))
                                              :notes "Challenging but doable"})
 
