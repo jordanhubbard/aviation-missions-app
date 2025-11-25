@@ -1,3 +1,0 @@
-- All commands must be run inside the container for this project - the tools required are never installed on the host
-- Use the makefile targets for all container operations
-- The backend for this project should always be implemented in pure clojure and the front end in pure javascript + react
