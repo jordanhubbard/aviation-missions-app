@@ -23,6 +23,7 @@ class AviationMissionApp {
         try {
             this.createAppStructure();
             this.bindEventListeners();
+            await this.checkAdminStatus(); // Check if user is already logged in
             await this.loadMissions();
             this.render();
             console.log('✅ Aviation Mission App initialized successfully');
@@ -684,7 +685,168 @@ class AviationMissionApp {
 
     showAdminLogin() {
         console.log('🔐 Show admin login');
-        // TODO: Implement admin login
+
+        const modalHTML = `
+            <div class="modal-overlay" id="adminLoginModal">
+                <div class="modal-content admin-login-modal">
+                    <div class="modal-header">
+                        <h2>🔐 Admin Login</h2>
+                        <button class="modal-close" onclick="app.closeAdminModal()">&times;</button>
+                    </div>
+                    <form id="adminLoginForm" class="admin-login-form">
+                        <div class="form-group">
+                            <label for="admin_name">Username</label>
+                            <input type="text" id="admin_name" name="admin_name" required 
+                                placeholder="Enter admin username" autocomplete="username">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required 
+                                placeholder="Enter password" autocomplete="current-password">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="app.closeAdminModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+
+                        <div id="loginError" class="login-error" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const form = document.getElementById('adminLoginForm');
+        form.addEventListener('submit', (e) => this.handleAdminLogin(e));
+    }
+
+    closeAdminModal() {
+        const modal = document.getElementById('adminLoginModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async handleAdminLogin(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const credentials = {
+            admin_name: formData.get('admin_name'),
+            password: formData.get('password')
+        };
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const errorDiv = document.getElementById('loginError');
+        
+        // Disable submit button during request
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging in...';
+        errorDiv.style.display = 'none';
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/admin/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(credentials)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Login failed');
+            }
+
+            const result = await response.json();
+            console.log('✅ Admin logged in:', result.admin_name);
+
+            // Store the token
+            localStorage.setItem('admin_token', result.token);
+            localStorage.setItem('admin_name', result.admin_name);
+
+            // Close modal
+            this.closeAdminModal();
+
+            // Update UI to show admin status
+            this.updateAdminUI(true, result.admin_name);
+
+            alert(`Welcome, ${result.admin_name}! You are now logged in as admin.`);
+        } catch (error) {
+            console.error('❌ Admin login failed:', error);
+            errorDiv.textContent = error.message;
+            errorDiv.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Login';
+        }
+    }
+
+    updateAdminUI(isAdmin, adminName = null) {
+        const headerActions = document.querySelector('.header-actions');
+        if (!headerActions) return;
+
+        if (isAdmin && adminName) {
+            headerActions.innerHTML = `
+                <span class="admin-status">👤 Admin: ${this.escapeHtml(adminName)}</span>
+                <button class="btn btn-primary" onclick="app.showNewMissionForm()">Create Mission</button>
+                <button class="btn btn-secondary" onclick="app.handleAdminLogout()">Logout</button>
+            `;
+        } else {
+            headerActions.innerHTML = `
+                <button class="btn btn-primary" onclick="app.showNewMissionForm()">Create Mission</button>
+                <button class="btn btn-secondary" onclick="app.showAdminLogin()">Admin Login</button>
+            `;
+        }
+    }
+
+    handleAdminLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_name');
+            this.updateAdminUI(false);
+            console.log('👋 Admin logged out');
+            alert('You have been logged out.');
+        }
+    }
+
+    async checkAdminStatus() {
+        const token = localStorage.getItem('admin_token');
+        const adminName = localStorage.getItem('admin_name');
+
+        if (!token) {
+            this.updateAdminUI(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/admin/status`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.is_admin) {
+                    this.updateAdminUI(true, adminName || result.admin_name);
+                    console.log('✅ Admin session validated');
+                    return;
+                }
+            }
+
+            // Token invalid, clear it
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_name');
+            this.updateAdminUI(false);
+        } catch (error) {
+            console.error('Failed to check admin status:', error);
+            this.updateAdminUI(false);
+        }
     }
 }
 

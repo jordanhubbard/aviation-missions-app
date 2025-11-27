@@ -1,12 +1,20 @@
 # ✈️ Aviation Mission Management System
 
 [![CI/CD Pipeline](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/ci.yml)
+[![Deploy to Railway](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/deploy-railway.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/deploy-railway.yml)
 [![PR Validation](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/pr-check.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/pr-check.yml)
 [![Nightly Checks](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/nightly.yml/badge.svg)](https://github.com/jordanhubbard/aviation-missions-app/actions/workflows/nightly.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/jordanhubbard/aviation-missions-app)
+[![Railway](https://img.shields.io/badge/deploy-railway-blueviolet)](https://railway.app)
 
-> A modern, full-stack web application for managing general aviation training missions. Built with Clojure backend and ClojureScript/Reagent frontend, featuring a comprehensive mission catalog, community interactions, and administrative tools.
+> A modern, full-stack web application for managing general aviation training missions. Built with Clojure backend and Pure JavaScript frontend, featuring a comprehensive mission catalog, community interactions, and administrative tools.
+
+## 🌐 Live Demo
+
+**Deployed on Railway**: The application is automatically deployed on every push to `main` branch.
+
+👉 **[View Live Application](https://aviation-missions-app-production.up.railway.app)** _(Check Railway dashboard for your actual URL)_
 
 ## 🌟 Features
 
@@ -176,6 +184,56 @@ cd frontend && npm run build
 
 ## 🚢 Deployment
 
+### Railway Deployment (Recommended)
+
+The application is configured for automatic deployment to Railway:
+
+#### Initial Setup
+
+1. **Link Railway to GitHub**:
+   ```bash
+   # Install Railway CLI
+   npm install -g @railway/cli
+   
+   # Login to Railway
+   railway login
+   
+   # Link your project
+   railway link
+   ```
+
+2. **Set up GitHub Secret**:
+   - Go to your GitHub repository → Settings → Secrets and variables → Actions
+   - Add new secret: `RAILWAY_TOKEN`
+   - Get your token from: `railway tokens` or Railway dashboard
+
+3. **Automatic Deployments**:
+   - Every push to `main` branch automatically deploys to Railway
+   - Monitor deployments in the Actions tab
+   - View your app at your Railway domain
+
+#### Manual Deployment
+
+```bash
+# Deploy from local
+railway up
+
+# View logs
+railway logs
+
+# Open your app
+railway open
+```
+
+#### Railway Environment Variables
+
+Railway automatically configures:
+- `PORT` - Dynamically assigned by Railway
+- `RAILWAY_ENVIRONMENT` - Production/staging environment
+- `RAILWAY_PUBLIC_DOMAIN` - Your app's public URL
+
+No additional configuration needed! The app automatically detects Railway's PORT variable.
+
 ### Docker Deployment
 
 ```bash
@@ -192,11 +250,10 @@ make stop
 make clean
 ```
 
-### Cloud Deployment
+### Other Cloud Platforms
 
-The application is designed for easy deployment on various cloud platforms:
+The application also supports deployment on:
 
-- **Railway**: Automatic deployment from GitHub
 - **Heroku**: Container registry deployment
 - **AWS ECS**: Fargate or EC2 deployment
 - **Google Cloud Run**: Serverless container deployment
@@ -207,11 +264,13 @@ The application is designed for easy deployment on various cloud platforms:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `8080` | Main application port (both frontend and API) |
+| `PORT` | `3000` | Main application port (Railway sets this automatically) |
 | `DATABASE_URL` | `./data/aviation-missions` | H2 database location |
 | `ENVIRONMENT` | `production` | Runtime environment |
+| `ADMIN_USERNAME` | `admin` | Admin login username |
+| `ADMIN_PASSWORD` | `aviation123` | Admin login password (change in production!) |
 
-**Note**: In the current setup, both frontend and API are served on the same port (8080), with API endpoints under `/api/*` path.
+**Note**: Both frontend and API are served on the same port, with API endpoints under `/api/*` path.
 
 ## 🔄 CI/CD Pipeline
 
@@ -225,7 +284,13 @@ This project includes a comprehensive CI/CD pipeline powered by GitHub Actions:
   - Docker build and integration tests
   - Multi-platform image builds (amd64, arm64)
   - Security scanning with Trivy
-  - Automatic deployment (main branch only)
+  - Container image publishing to GitHub Container Registry
+
+- **🚂 Railway Deployment** (`deploy-railway.yml`): Automatic deployments
+  - Triggers on every push to `main` branch
+  - Can be manually triggered via GitHub Actions
+  - Deploys to Railway using Railway CLI
+  - Provides deployment status and verification
 
 - **🔍 Pull Request Validation** (`pr-check.yml`): Validates PRs
   - Conventional commit format checking

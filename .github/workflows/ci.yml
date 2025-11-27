@@ -47,7 +47,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'leiningen'
+
+      - name: Cache Leiningen dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-lein-${{ hashFiles('backend/project.clj') }}
+          restore-keys: |
+            ${{ runner.os }}-lein-
 
       - name: Install Leiningen
         run: |

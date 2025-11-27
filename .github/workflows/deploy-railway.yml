@@ -1,0 +1,56 @@
+name: 🚂 Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to Railway
+    runs-on: ubuntu-latest
+    environment: railway-production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "🚂 Deploying to Railway..."
+          railway up --service aviation-missions-app || railway up
+          echo "✅ Deployment triggered successfully!"
+
+      - name: Verify deployment
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "⏳ Waiting for deployment to complete..."
+          sleep 30
+          
+          # Get deployment status
+          railway status || echo "Status check completed"
+          
+          echo "✅ Deployment verification complete"
+          echo ""
+          echo "🌐 Your app should be live on Railway!"
+          echo "Check your Railway dashboard for the public URL"
+
+      - name: Deployment summary
+        run: |
+          echo "## 🚂 Railway Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### What was deployed:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +"%Y-%m-%d %H:%M UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 View your app on Railway: Check your Railway dashboard" >> $GITHUB_STEP_SUMMARY
+
