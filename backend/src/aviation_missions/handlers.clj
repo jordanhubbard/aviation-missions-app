@@ -1,6 +1,7 @@
 (ns aviation-missions.handlers
   (:require [ring.util.response :refer [response status]]
             [aviation-missions.db :as db]
+            [aviation-missions.admin-auth :as admin-auth]
             [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
@@ -355,21 +356,35 @@
 
 ;; Admin authentication
 (defn admin-login
-  "Simple admin login (in production, use proper authentication)"
+  "Admin login using admins.json authentication"
   [request]
   (try
     (let [credentials (:body request)
-          admin-name (:admin_name credentials)
-          password (:password credentials)
-          ;; Use environment variables for admin credentials
-          admin-user (or (System/getenv "ADMIN_USERNAME") "admin")
-          admin-pass (or (System/getenv "ADMIN_PASSWORD") "aviation123")]
-        (if (and (= admin-name admin-user) (= password admin-pass))
-          (let [token (db/create-admin-session! admin-name)]
-            (response {:token token :admin_name admin-name}))
+          email (:email credentials)
+          password (:password credentials)]
+      (log/info "Admin login attempt for:" email)
+      
+      (if-let [admin (admin-auth/authenticate-admin email password)]
+        (if (:first_login admin)
+          ;; First login - require password setup
+          (-> (response {:first_login true 
+                        :email (:email admin)
+                        :name (:name admin)
+                        :message "Please set your password"})
+              (status 200))
+          ;; Regular login - create session
+          (let [token (db/create-admin-session! (:email admin))]
+            (log/info "Admin login successful:" (:email admin))
+            (response {:token token 
+                      :email (:email admin)
+                      :name (:name admin)
+                      :first_login false})))
+        (do
+          (log/warn "Admin login failed for:" email)
           (-> (response {:error "Invalid credentials"})
-              (status 401))))
+              (status 401)))))
     (catch Exception e
+      (log/error e "Admin login error")
       (-> (response {:error "Login failed" :details (.getMessage e)})
           (status 500)))))
 
@@ -383,12 +398,105 @@
                   (if (.startsWith ^String auth-header "Bearer ")
                     (subs auth-header 7)
                     auth-header))
-          is-admin (and token (seq token) (db/validate-admin-session token))]
-      (if is-admin
-        (response {:is_admin true :admin_name (:admin_name is-admin)})
+          session (and token (seq token) (db/validate-admin-session token))]
+      (if session
+        (response {:is_admin true 
+                  :admin_name (:admin_name session)
+                  :email (:admin_name session)})
         (response {:is_admin false})))
     (catch Exception e
       (-> (response {:error "Failed to check admin status" :details (.getMessage e)})
+          (status 500)))))
+
+(defn setup-admin-password
+  "Set password for first-time admin login"
+  [request]
+  (try
+    (let [data (:body request)
+          email (:email data)
+          password (:password data)]
+      (log/info "Password setup for admin:" email)
+      
+      (if (and email password (>= (count password) 8))
+        (if-let [admin (admin-auth/find-admin-by-email email)]
+          (if (:first_login admin)
+            (do
+              (admin-auth/set-admin-password! email password)
+              (let [token (db/create-admin-session! email)]
+                (log/info "Password set successfully for:" email)
+                (response {:token token
+                          :email email
+                          :name (:name admin)
+                          :message "Password set successfully"})))
+            (-> (response {:error "Admin has already set password"})
+                (status 400)))
+          (-> (response {:error "Admin not found"})
+              (status 404)))
+        (-> (response {:error "Invalid email or password (minimum 8 characters)"})
+            (status 400))))
+    (catch Exception e
+      (log/error e "Password setup error")
+      (-> (response {:error "Failed to set password" :details (.getMessage e)})
+          (status 500)))))
+
+(defn list-admin-users
+  "List all admin users (admin only)"
+  [_request]
+  (try
+    (let [admins (admin-auth/list-admins)]
+      (log/info "Listing" (count admins) "admin users")
+      (response {:admins admins}))
+    (catch Exception e
+      (log/error e "Failed to list admins")
+      (-> (response {:error "Failed to list admins" :details (.getMessage e)})
+          (status 500)))))
+
+(defn create-admin-user
+  "Create a new admin user (admin only)"
+  [request]
+  (try
+    (let [data (:body request)
+          name (:name data)
+          email (:email data)]
+      (log/info "Creating new admin:" name email)
+      
+      (if (and name email)
+        (if (admin-auth/admin-exists? email)
+          (-> (response {:error "Admin with this email already exists"})
+              (status 400))
+          (do
+            (admin-auth/create-admin! name email)
+            (log/info "Admin created successfully:" email)
+            (response {:message "Admin created successfully"
+                      :email email
+                      :name name})))
+        (-> (response {:error "Name and email are required"})
+            (status 400))))
+    (catch Exception e
+      (log/error e "Failed to create admin")
+      (-> (response {:error "Failed to create admin" :details (.getMessage e)})
+          (status 500)))))
+
+(defn delete-admin-user
+  "Delete an admin user (admin only)"
+  [email]
+  (try
+    (log/info "Deleting admin:" email)
+    
+    (if (admin-auth/admin-exists? email)
+      (let [admin-count (admin-auth/count-admins)]
+        (if (<= admin-count 1)
+          (-> (response {:error "Cannot delete the last admin"})
+              (status 400))
+          (do
+            (admin-auth/delete-admin! email)
+            (log/info "Admin deleted successfully:" email)
+            (response {:message "Admin deleted successfully"}))))
+      (-> (response {:error "Admin not found"})
+          (status 404)))
+    (catch Exception e
+      (log/error e "Failed to delete admin")
+      (-> (response {:error "Failed to delete admin" :details (.getMessage e)})
           (status 500)))))
 
 ;; Mission update approval handlers

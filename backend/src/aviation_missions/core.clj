@@ -98,7 +98,11 @@
 
   ;; Admin endpoints
   (POST "/api/admin/login" request (handlers/admin-login request))
+  (POST "/api/admin/setup-password" request (handlers/setup-admin-password request))
   (GET "/api/admin/status" request (handlers/check-admin-status request))
+  (GET "/api/admin/users" request ((handlers/admin-required handlers/list-admin-users) request))
+  (POST "/api/admin/users" request ((handlers/admin-required handlers/create-admin-user) request))
+  (DELETE "/api/admin/users/:email" [email :as request] ((handlers/admin-required handlers/delete-admin-user) email))
   
   ;; Health check
   (GET "/health" []
