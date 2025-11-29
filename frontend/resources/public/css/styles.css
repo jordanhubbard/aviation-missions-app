@@ -998,3 +998,59 @@ body {
     padding: 20px;
   }
 }
+
+/* Admin Login Modal */
+.admin-login-modal {
+  max-width: 400px;
+  width: 100%;
+}
+
+.admin-login-form {
+  padding: 25px;
+}
+
+.admin-login-form .form-group {
+  margin-bottom: 20px;
+}
+
+.admin-login-form .form-group:last-of-type {
+  margin-bottom: 25px;
+}
+
+.login-error {
+  margin-top: 15px;
+  padding: 12px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #c33;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Admin Status Indicator */
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .admin-login-modal {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .admin-status {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}

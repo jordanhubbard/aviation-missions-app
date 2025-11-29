@@ -3,7 +3,7 @@
 
 class AviationMissionApp {
     constructor() {
-        this.apiBaseUrl = 'http://localhost:8080';
+        this.apiBaseUrl = '';
         this.missions = [];
         this.filteredMissions = [];
         this.filters = {
@@ -14,13 +14,6 @@ class AviationMissionApp {
         };
         this.isLoading = true;
         this.error = null;
-        this.currentView = 'missions'; // 'missions' or 'admin'
-        
-        // Admin state
-        this.adminToken = localStorage.getItem('adminToken');
-        this.adminEmail = localStorage.getItem('adminEmail');
-        this.adminName = localStorage.getItem('adminName');
-        this.isAdmin = false;
 
         console.log('🚀 Aviation Mission App initializing...');
         this.init();
@@ -30,9 +23,7 @@ class AviationMissionApp {
         try {
             this.createAppStructure();
             this.bindEventListeners();
-            if (this.adminToken) {
-                await this.checkAdminStatus();
-            }
+            await this.checkAdminStatus(); // Check if user is already logged in
             await this.loadMissions();
             this.render();
             console.log('✅ Aviation Mission App initialized successfully');
@@ -52,15 +43,13 @@ class AviationMissionApp {
             <div class="app-container">
                 <header class="app-header">
                     <div class="header-content">
-                        <div class="header-title">
+                        <div class="header-text">
                             <h1>✈️ Aviation Mission Management</h1>
                             <p>Manage and track aviation missions</p>
                         </div>
                         <div class="header-actions">
-                            <button id="adminLoginBtn" class="btn-admin-login">
-                                <span class="admin-icon">🔐</span>
-                                <span id="adminBtnText">Admin Login</span>
-                            </button>
+                            <button class="btn btn-primary" onclick="app.showNewMissionForm()">Create Mission</button>
+                            <button class="btn btn-secondary" onclick="app.showAdminLogin()">Admin Login</button>
                         </div>
                     </div>
                 </header>
@@ -115,16 +104,6 @@ class AviationMissionApp {
                     </div>
 
                     <div class="missions-grid" id="missionsGrid" style="display: none;"></div>
-                    
-                    <div class="admin-dashboard" id="adminDashboard" style="display: none;"></div>
-                </div>
-                
-                <!-- Admin Login Modal -->
-                <div id="adminModal" class="modal" style="display: none;">
-                    <div class="modal-content">
-                        <span class="close" id="modalClose">&times;</span>
-                        <div id="modalBody"></div>
-                    </div>
                 </div>
 
                 <!-- Success sentinel for testing -->
@@ -162,24 +141,10 @@ class AviationMissionApp {
             this.filterMissions();
         });
 
+        // Remove old button listeners since we're using FAB now
+
         const retryBtn = document.getElementById('retryBtn');
         retryBtn.addEventListener('click', () => this.loadMissions());
-        
-        // Admin button
-        const adminLoginBtn = document.getElementById('adminLoginBtn');
-        adminLoginBtn.addEventListener('click', () => this.handleAdminButtonClick());
-        
-        // Modal close button
-        const modalClose = document.getElementById('modalClose');
-        modalClose.addEventListener('click', () => this.closeModal());
-        
-        // Close modal when clicking outside
-        const modal = document.getElementById('adminModal');
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                this.closeModal();
-            }
-        });
     }
 
     async loadMissions() {
@@ -543,458 +508,345 @@ class AviationMissionApp {
 
     showNewMissionForm() {
         console.log('➕ Show new mission form');
-        // TODO: Implement new mission form
-    }
 
-    // ===== ADMIN METHODS =====
-
-    async checkAdminStatus() {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/admin/status`, {
-                headers: {
-                    'Authorization': `Bearer ${this.adminToken}`
-                }
-            });
-            
-            const data = await response.json();
-            if (data.is_admin) {
-                this.isAdmin = true;
-                this.adminEmail = data.email || data.admin_name;
-                this.adminName = data.admin_name;
-                this.updateAdminButton();
-            } else {
-                this.logout();
-            }
-        } catch (error) {
-            console.error('Failed to check admin status:', error);
-            this.logout();
-        }
-    }
-
-    handleAdminButtonClick() {
-        if (this.isAdmin) {
-            if (this.currentView === 'admin') {
-                this.currentView = 'missions';
-                this.render();
-            } else {
-                this.showAdminDashboard();
-            }
-        } else {
-            this.showAdminLoginForm();
-        }
-    }
-
-    showAdminLoginForm() {
-        const modalBody = document.getElementById('modalBody');
-        modalBody.innerHTML = `
-            <h2>Admin Login</h2>
-            <form id="adminLoginForm">
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="adminEmail" required />
-                </div>
-                <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" id="adminPassword" required />
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Login</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
-                </div>
-            </form>
-        `;
-        
-        document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.adminLogin();
-        });
-        
-        document.getElementById('adminModal').style.display = 'block';
-    }
-
-    showPasswordSetupForm() {
-        const modalBody = document.getElementById('modalBody');
-        modalBody.innerHTML = `
-            <h2>Set Your Password</h2>
-            <p>Welcome! Please set your admin password (minimum 8 characters)</p>
-            <form id="passwordSetupForm">
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="setupEmail" value="${this.adminEmail}" readonly />
-                </div>
-                <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" id="setupPassword" minlength="8" required />
-                </div>
-                <div class="form-group">
-                    <label>Confirm Password:</label>
-                    <input type="password" id="setupPasswordConfirm" minlength="8" required />
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Set Password</button>
-                </div>
-            </form>
-        `;
-        
-        document.getElementById('passwordSetupForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.setupPassword();
-        });
-        
-        document.getElementById('adminModal').style.display = 'block';
-    }
-
-    async adminLogin() {
-        const email = document.getElementById('adminEmail').value;
-        const password = document.getElementById('adminPassword').value;
-        
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/admin/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                if (data.first_login) {
-                    // First time login - need to set password
-                    this.adminEmail = data.email;
-                    this.adminName = data.name;
-                    this.showPasswordSetupForm();
-                } else {
-                    // Regular login success
-                    this.adminToken = data.token;
-                    this.adminEmail = data.email;
-                    this.adminName = data.name;
-                    this.isAdmin = true;
-                    
-                    localStorage.setItem('adminToken', this.adminToken);
-                    localStorage.setItem('adminEmail', this.adminEmail);
-                    localStorage.setItem('adminName', this.adminName);
-                    
-                    this.closeModal();
-                    this.updateAdminButton();
-                    this.showAdminDashboard();
-                }
-            } else {
-                alert(data.error || 'Login failed');
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Login failed: ' + error.message);
-        }
-    }
-
-    async setupPassword() {
-        const password = document.getElementById('setupPassword').value;
-        const confirmPassword = document.getElementById('setupPasswordConfirm').value;
-        
-        if (password !== confirmPassword) {
-            alert('Passwords do not match');
-            return;
-        }
-        
-        if (password.length < 8) {
-            alert('Password must be at least 8 characters');
-            return;
-        }
-        
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/admin/setup-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: this.adminEmail, password })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                this.adminToken = data.token;
-                this.isAdmin = true;
-                
-                localStorage.setItem('adminToken', this.adminToken);
-                localStorage.setItem('adminEmail', this.adminEmail);
-                localStorage.setItem('adminName', this.adminName);
-                
-                alert('Password set successfully!');
-                this.closeModal();
-                this.updateAdminButton();
-                this.showAdminDashboard();
-            } else {
-                alert(data.error || 'Failed to set password');
-            }
-        } catch (error) {
-            console.error('Password setup error:', error);
-            alert('Failed to set password: ' + error.message);
-        }
-    }
-
-    logout() {
-        this.adminToken = null;
-        this.adminEmail = null;
-        this.adminName = null;
-        this.isAdmin = false;
-        this.currentView = 'missions';
-        
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminEmail');
-        localStorage.removeItem('adminName');
-        
-        this.updateAdminButton();
-        this.render();
-    }
-
-    updateAdminButton() {
-        const btnText = document.getElementById('adminBtnText');
-        const adminBtn = document.getElementById('adminLoginBtn');
-        
-        if (this.isAdmin) {
-            btnText.textContent = this.adminName || 'Admin';
-            adminBtn.classList.add('admin-logged-in');
-            
-            // Add dropdown menu
-            if (!document.getElementById('adminDropdown')) {
-                const dropdown = document.createElement('div');
-                dropdown.id = 'adminDropdown';
-                dropdown.className = 'admin-dropdown';
-                dropdown.innerHTML = `
-                    <button onclick="app.showAdminDashboard()">Dashboard</button>
-                    <button onclick="app.logout()">Logout</button>
-                `;
-                adminBtn.parentElement.appendChild(dropdown);
-            }
-        } else {
-            btnText.textContent = 'Admin Login';
-            adminBtn.classList.remove('admin-logged-in');
-            const dropdown = document.getElementById('adminDropdown');
-            if (dropdown) dropdown.remove();
-        }
-    }
-
-    async showAdminDashboard() {
-        this.currentView = 'admin';
-        const filtersPanel = document.getElementById('filtersPanel');
-        const missionsGrid = document.getElementById('missionsGrid');
-        const adminDashboard = document.getElementById('adminDashboard');
-        
-        filtersPanel.style.display = 'none';
-        missionsGrid.style.display = 'none';
-        adminDashboard.style.display = 'block';
-        
-        adminDashboard.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading admin dashboard...</p></div>';
-        
-        try {
-            // Load submissions
-            const submissionsResponse = await fetch(`${this.apiBaseUrl}/submissions`, {
-                headers: { 'Authorization': `Bearer ${this.adminToken}` }
-            });
-            const submissionsData = await submissionsResponse.json();
-            
-            // Load admin users
-            const adminsResponse = await fetch(`${this.apiBaseUrl}/admin/users`, {
-                headers: { 'Authorization': `Bearer ${this.adminToken}` }
-            });
-            const adminsData = await adminsResponse.json();
-            
-            this.renderAdminDashboard(submissionsData.submissions || [], adminsData.admins || []);
-        } catch (error) {
-            console.error('Failed to load admin data:', error);
-            adminDashboard.innerHTML = '<p class="error">Failed to load admin dashboard</p>';
-        }
-    }
-
-    renderAdminDashboard(submissions, admins) {
-        const adminDashboard = document.getElementById('adminDashboard');
-        
-        const pendingSubmissions = submissions.filter(s => s.status === 'pending');
-        
-        adminDashboard.innerHTML = `
-            <div class="admin-header">
-                <h2>Admin Dashboard</h2>
-                <button class="btn btn-secondary" onclick="app.currentView='missions'; app.render()">Back to Missions</button>
-            </div>
-            
-            <div class="admin-sections">
-                <section class="admin-section">
-                    <h3>Pending Mission Submissions (${pendingSubmissions.length})</h3>
-                    <div class="submissions-list">
-                        ${pendingSubmissions.length === 0 ? 
-                            '<p class="empty-message">No pending submissions</p>' :
-                            pendingSubmissions.map(sub => this.renderSubmissionCard(sub)).join('')
-                        }
+        const modalHTML = `
+            <div class="modal-overlay" id="missionFormModal">
+                <div class="modal-content mission-form-modal">
+                    <div class="modal-header">
+                        <h2>✈️ Create New Mission</h2>
+                        <button class="modal-close" onclick="app.closeModal()">&times;</button>
                     </div>
-                </section>
-                
-                <section class="admin-section">
-                    <h3>Admin Users (${admins.length})</h3>
-                    <button class="btn btn-primary" onclick="app.showAddAdminForm()">Add Admin</button>
-                    <div class="admins-list">
-                        ${admins.map(admin => `
-                            <div class="admin-user-card">
-                                <div class="admin-user-info">
-                                    <strong>${this.escapeHtml(admin.name)}</strong>
-                                    <span>${this.escapeHtml(admin.email)}</span>
-                                    ${admin.first_login ? '<span class="badge">First Login Pending</span>' : ''}
-                                </div>
-                                <button class="btn btn-danger btn-sm" 
-                                        onclick="app.deleteAdmin('${admin.email}')"
-                                        ${admins.length <= 1 ? 'disabled' : ''}>
-                                    Delete
-                                </button>
+                    <form id="newMissionForm" class="mission-form">
+                        <div class="form-section">
+                            <h3>Basic Information</h3>
+
+                            <div class="form-group">
+                                <label for="title">Mission Title *</label>
+                                <input type="text" id="title" name="title" required maxlength="255"
+                                    placeholder="e.g., Class B Ops: LAX Bravo Transition">
                             </div>
-                        `).join('')}
-                    </div>
-                </section>
-            </div>
-        `;
-    }
 
-    renderSubmissionCard(submission) {
-        return `
-            <div class="submission-card">
-                <h4>${this.escapeHtml(submission.title)}</h4>
-                <p><strong>Category:</strong> ${this.escapeHtml(submission.category)}</p>
-                <p><strong>Difficulty:</strong> ${submission.difficulty}/10</p>
-                <p><strong>Submitted by:</strong> ${this.escapeHtml(submission.submitter_name)}</p>
-                <p><strong>Description:</strong> ${this.escapeHtml(submission.mission_description)}</p>
-                <div class="submission-actions">
-                    <button class="btn btn-primary" onclick="app.approveSubmission(${submission.id})">Approve</button>
-                    <button class="btn btn-danger" onclick="app.rejectSubmission(${submission.id})">Reject</button>
-                </div>
-            </div>
-        `;
-    }
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="category">Category *</label>
+                                    <select id="category" name="category" required>
+                                        <option value="">Select a category</option>
+                                        <option value="Training">Training</option>
+                                        <option value="Proficiency">Proficiency</option>
+                                        <option value="Cross-Country">Cross-Country</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
 
-    async approveSubmission(id) {
-        if (!confirm('Approve this mission submission?')) return;
-        
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/submissions/${id}/approve`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${this.adminToken}` }
-            });
-            
-            if (response.ok) {
-                alert('Mission approved!');
-                await this.loadMissions();
-                this.showAdminDashboard();
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Failed to approve mission');
-            }
-        } catch (error) {
-            console.error('Approve error:', error);
-            alert('Failed to approve mission');
-        }
-    }
+                                <div class="form-group">
+                                    <label for="difficulty">Difficulty (1-10) *</label>
+                                    <input type="number" id="difficulty" name="difficulty" required
+                                        min="1" max="10" placeholder="1-10">
+                                </div>
 
-    async rejectSubmission(id) {
-        if (!confirm('Reject this mission submission?')) return;
-        
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/submissions/${id}/reject`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${this.adminToken}` }
-            });
-            
-            if (response.ok) {
-                alert('Mission rejected');
-                this.showAdminDashboard();
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Failed to reject mission');
-            }
-        } catch (error) {
-            console.error('Reject error:', error);
-            alert('Failed to reject mission');
-        }
-    }
-
-    showAddAdminForm() {
-        const modalBody = document.getElementById('modalBody');
-        modalBody.innerHTML = `
-            <h2>Add Admin User</h2>
-            <form id="addAdminForm">
                 <div class="form-group">
-                    <label>Name:</label>
-                    <input type="text" id="newAdminName" required />
+                                    <label for="pilot_experience">Pilot Experience</label>
+                                    <select id="pilot_experience" name="pilot_experience">
+                                        <option value="">Not specified</option>
+                                        <option value="Beginner (< 100 hours)">Beginner (< 100 hours)</option>
+                                        <option value="Intermediate (100-500 hours)">Intermediate (100-500 hours)</option>
+                                        <option value="Advanced (500+ hours)">Advanced (500+ hours)</option>
+                                        <option value="Commercial/ATP">Commercial/ATP</option>
+                                    </select>
                 </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Mission Details</h3>
+
                 <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="newAdminEmail" required />
+                                <label for="objective">Learning Objective *</label>
+                                <textarea id="objective" name="objective" required rows="2"
+                                    placeholder="Primary learning objective for this mission"></textarea>
                 </div>
-                <p class="info-text">The new admin will set their password on first login.</p>
+
+                            <div class="form-group">
+                                <label for="mission_description">Mission Description *</label>
+                                <textarea id="mission_description" name="mission_description" required rows="4"
+                                    placeholder="Detailed description of what the pilot will do"></textarea>
+                </div>
+
+                            <div class="form-group">
+                                <label for="why_description">Why This Mission? *</label>
+                                <textarea id="why_description" name="why_description" required rows="3"
+                                    placeholder="Educational rationale - why this mission is valuable"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Route Information</h3>
+
+                <div class="form-group">
+                                <label for="route">Route Description</label>
+                                <input type="text" id="route" name="route" maxlength="500"
+                                    placeholder="e.g., KPAO → coastal route south → LAX Bravo → KTOA">
+                </div>
+
+                <div class="form-group">
+                                <label for="suggested_route">Suggested Waypoints</label>
+                                <input type="text" id="suggested_route" name="suggested_route" maxlength="500"
+                                    placeholder="e.g., KPAO KWVI KHHR KTOA">
+                                <small>Use ICAO airport codes separated by spaces</small>
+                </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Additional Information</h3>
+
+                <div class="form-group">
+                                <label for="special_challenges">Special Challenges</label>
+                                <input type="text" id="special_challenges" name="special_challenges"
+                                    placeholder="e.g., Mountain Flying, High Altitude, Night Operations">
+                </div>
+
+                            <div class="form-group">
+                                <label for="notes">Notes & Tips</label>
+                                <textarea id="notes" name="notes" rows="3"
+                                    placeholder="Additional notes, tips, and considerations for pilots"></textarea>
+                            </div>
+                        </div>
+
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Add Admin</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                            <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Mission</button>
                 </div>
             </form>
+                </div>
+            </div>
         `;
-        
-        document.getElementById('addAdminForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addAdmin();
-        });
-        
-        document.getElementById('adminModal').style.display = 'block';
-    }
 
-    async addAdmin() {
-        const name = document.getElementById('newAdminName').value;
-        const email = document.getElementById('newAdminEmail').value;
-        
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/admin/users`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.adminToken}`
-                },
-                body: JSON.stringify({ name, email })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                alert('Admin added successfully!');
-                this.closeModal();
-                this.showAdminDashboard();
-            } else {
-                alert(data.error || 'Failed to add admin');
-            }
-        } catch (error) {
-            console.error('Add admin error:', error);
-            alert('Failed to add admin');
-        }
-    }
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    async deleteAdmin(email) {
-        if (!confirm(`Delete admin ${email}?`)) return;
-        
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/admin/users/${encodeURIComponent(email)}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${this.adminToken}` }
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                alert('Admin deleted');
-                this.showAdminDashboard();
-            } else {
-                alert(data.error || 'Failed to delete admin');
-            }
-        } catch (error) {
-            console.error('Delete admin error:', error);
-            alert('Failed to delete admin');
-        }
+        const form = document.getElementById('newMissionForm');
+        form.addEventListener('submit', (e) => this.handleMissionSubmit(e));
     }
 
     closeModal() {
-        document.getElementById('adminModal').style.display = 'none';
+        const modal = document.getElementById('missionFormModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async handleMissionSubmit(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        // Build mission object
+        const mission = {
+            title: formData.get('title'),
+            category: formData.get('category'),
+            difficulty: parseInt(formData.get('difficulty')),
+            objective: formData.get('objective'),
+            mission_description: formData.get('mission_description'),
+            why_description: formData.get('why_description'),
+            route: formData.get('route') || null,
+            suggested_route: formData.get('suggested_route') || null,
+            pilot_experience: formData.get('pilot_experience') || null,
+            special_challenges: formData.get('special_challenges') || null,
+            notes: formData.get('notes') || null
+        };
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/missions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mission)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to create mission: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Mission created:', result);
+
+            // Close modal and reload missions
+                this.closeModal();
+            await this.loadMissions();
+            this.render();
+
+            alert('Mission created successfully!');
+        } catch (error) {
+            console.error('❌ Failed to create mission:', error);
+            alert('Failed to create mission: ' + error.message);
+        }
+    }
+
+    showAdminLogin() {
+        console.log('🔐 Show admin login');
+
+        const modalHTML = `
+            <div class="modal-overlay" id="adminLoginModal">
+                <div class="modal-content admin-login-modal">
+                    <div class="modal-header">
+                        <h2>🔐 Admin Login</h2>
+                        <button class="modal-close" onclick="app.closeAdminModal()">&times;</button>
+                    </div>
+                    <form id="adminLoginForm" class="admin-login-form">
+                        <div class="form-group">
+                            <label for="admin_name">Username</label>
+                            <input type="text" id="admin_name" name="admin_name" required 
+                                placeholder="Enter admin username" autocomplete="username">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required 
+                                placeholder="Enter password" autocomplete="current-password">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="app.closeAdminModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+
+                        <div id="loginError" class="login-error" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const form = document.getElementById('adminLoginForm');
+        form.addEventListener('submit', (e) => this.handleAdminLogin(e));
+    }
+
+    closeAdminModal() {
+        const modal = document.getElementById('adminLoginModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async handleAdminLogin(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const credentials = {
+            admin_name: formData.get('admin_name'),
+            password: formData.get('password')
+        };
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const errorDiv = document.getElementById('loginError');
+        
+        // Disable submit button during request
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging in...';
+        errorDiv.style.display = 'none';
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/admin/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(credentials)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Login failed');
+            }
+
+            const result = await response.json();
+            console.log('✅ Admin logged in:', result.admin_name);
+
+            // Store the token
+            localStorage.setItem('admin_token', result.token);
+            localStorage.setItem('admin_name', result.admin_name);
+
+            // Close modal
+            this.closeAdminModal();
+
+            // Update UI to show admin status
+            this.updateAdminUI(true, result.admin_name);
+
+            alert(`Welcome, ${result.admin_name}! You are now logged in as admin.`);
+        } catch (error) {
+            console.error('❌ Admin login failed:', error);
+            errorDiv.textContent = error.message;
+            errorDiv.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Login';
+        }
+    }
+
+    updateAdminUI(isAdmin, adminName = null) {
+        const headerActions = document.querySelector('.header-actions');
+        if (!headerActions) return;
+
+        if (isAdmin && adminName) {
+            headerActions.innerHTML = `
+                <span class="admin-status">👤 Admin: ${this.escapeHtml(adminName)}</span>
+                <button class="btn btn-primary" onclick="app.showNewMissionForm()">Create Mission</button>
+                <button class="btn btn-secondary" onclick="app.handleAdminLogout()">Logout</button>
+            `;
+            } else {
+            headerActions.innerHTML = `
+                <button class="btn btn-primary" onclick="app.showNewMissionForm()">Create Mission</button>
+                <button class="btn btn-secondary" onclick="app.showAdminLogin()">Admin Login</button>
+            `;
+        }
+    }
+
+    handleAdminLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_name');
+            this.updateAdminUI(false);
+            console.log('👋 Admin logged out');
+            alert('You have been logged out.');
+        }
+    }
+
+    async checkAdminStatus() {
+        const token = localStorage.getItem('admin_token');
+        const adminName = localStorage.getItem('admin_name');
+
+        if (!token) {
+            this.updateAdminUI(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/admin/status`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.is_admin) {
+                    this.updateAdminUI(true, adminName || result.admin_name);
+                    console.log('✅ Admin session validated');
+                    return;
+                }
+            }
+
+            // Token invalid, clear it
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_name');
+            this.updateAdminUI(false);
+        } catch (error) {
+            console.error('Failed to check admin status:', error);
+            this.updateAdminUI(false);
+        }
     }
 }
 
