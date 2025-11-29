@@ -3,7 +3,7 @@
 
 class AviationMissionApp {
     constructor() {
-        this.apiBaseUrl = 'http://localhost:8080/api';
+        this.apiBaseUrl = 'http://localhost:8080';
         this.missions = [];
         this.filteredMissions = [];
         this.filters = {

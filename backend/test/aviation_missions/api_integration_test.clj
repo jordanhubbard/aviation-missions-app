@@ -5,7 +5,8 @@
             [aviation-missions.core :refer [app]]
             [aviation-missions.db :as db]
             [aviation-missions.handlers :as handlers]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc])
+  (:import [java.net URLEncoder]))
 
 ;; Test database configuration
 (def test-db-spec
@@ -208,7 +209,8 @@
           (is (= (get-in body [:rating :rating]) "up")))))
 
     (testing "GET /missions/:id/rating/:pilot_name retrieves user rating"
-      (let [response (app (mock/request :get (str "/missions/" mission-id "/rating/Test Pilot")))]
+      (let [encoded-name (URLEncoder/encode "Test Pilot" "UTF-8")
+            response (app (mock/request :get (str "/missions/" mission-id "/rating/" encoded-name)))]
 
         (is (= 200 (:status response)))
         (let [body (parse-json-response response)]

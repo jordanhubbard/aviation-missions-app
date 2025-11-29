@@ -62,47 +62,47 @@
         (content-type "text/html")))
   
   ;; Mission endpoints
-  (GET "/api/missions" [] handlers/get-missions)
+  (GET "/missions" request (handlers/get-missions request))
 
   ;; JSON Import/Export endpoints (admin only) - must come before /missions/:id
-  (GET "/api/missions/export" request ((handlers/admin-required handlers/export-missions) request))
-  (GET "/api/missions/export/yaml" request (handlers/export-missions-yaml request))
-  (POST "/api/missions/import" request ((handlers/admin-required handlers/import-missions) request))
-  (POST "/api/missions/import/yaml" request ((handlers/admin-required handlers/import-missions-yaml) request))
+  (GET "/missions/export" request ((handlers/admin-required handlers/export-missions) request))
+  (GET "/missions/export/yaml" request (handlers/export-missions-yaml request))
+  (POST "/missions/import" request ((handlers/admin-required handlers/import-missions) request))
+  (POST "/missions/import/yaml" request ((handlers/admin-required handlers/import-missions-yaml) request))
 
-  (GET "/api/missions/:id" [id] (handlers/get-mission id))
-  (POST "/api/missions" request (handlers/create-mission request))
-  (PUT "/api/missions/:id" [id :as request] (handlers/update-mission id request))
-  (DELETE "/api/missions/:id" [id] ((handlers/admin-required handlers/delete-mission) id))
+  (GET "/missions/:id" [id] (handlers/get-mission id))
+  (POST "/missions" request (handlers/create-mission request))
+  (PUT "/missions/:id" [id :as request] (handlers/update-mission id request))
+  (DELETE "/missions/:id" [id :as request] ((handlers/admin-required (fn [_] (handlers/delete-mission id))) request))
 
   ;; Mission interaction endpoints
-  (POST "/api/missions/:id/comments" [id :as request] (handlers/add-comment id request))
-  (GET "/api/missions/:id/comments" [id] (handlers/get-comments id))
-  (POST "/api/missions/:id/reviews" [id :as request] (handlers/add-review id request))
-  (GET "/api/missions/:id/reviews" [id] (handlers/get-reviews id))
-  (POST "/api/missions/:id/rating" [id :as request] (handlers/add-rating id request))
-  (GET "/api/missions/:id/rating/:pilot_name" [id pilot_name] (handlers/get-user-rating id pilot_name))
-  (POST "/api/missions/:id/completed" [id :as request] (handlers/mark-completed id request))
-  (GET "/api/missions/:id/completed" [id] (handlers/get-completions id))
+  (POST "/missions/:id/comments" [id :as request] (handlers/add-comment id request))
+  (GET "/missions/:id/comments" [id] (handlers/get-comments id))
+  (POST "/missions/:id/reviews" [id :as request] (handlers/add-review id request))
+  (GET "/missions/:id/reviews" [id] (handlers/get-reviews id))
+  (POST "/missions/:id/rating" [id :as request] (handlers/add-rating id request))
+  (GET "/missions/:id/rating/:pilot_name" [id pilot_name] (handlers/get-user-rating id pilot_name))
+  (POST "/missions/:id/completed" [id :as request] (handlers/mark-completed id request))
+  (GET "/missions/:id/completed" [id] (handlers/get-completions id))
 
   ;; Mission submission endpoints
-  (POST "/api/submissions" request (handlers/create-submission request))
-  (GET "/api/submissions" request ((handlers/admin-required handlers/get-submissions) request))
-  (PUT "/api/submissions/:id/approve" [id] ((handlers/admin-required handlers/approve-submission) id))
-  (PUT "/api/submissions/:id/reject" [id] ((handlers/admin-required handlers/reject-submission) id))
+  (POST "/submissions" request (handlers/create-submission request))
+  (GET "/submissions" request ((handlers/admin-required handlers/get-submissions) request))
+  (PUT "/submissions/:id/approve" [id :as request] ((handlers/admin-required (fn [_] (handlers/approve-submission id))) request))
+  (PUT "/submissions/:id/reject" [id :as request] ((handlers/admin-required (fn [_] (handlers/reject-submission id))) request))
 
   ;; Mission update endpoints
-  (GET "/api/updates" request ((handlers/admin-required handlers/get-mission-updates) request))
-  (PUT "/api/updates/:id/approve" [id] ((handlers/admin-required handlers/approve-mission-update) id))
-  (PUT "/api/updates/:id/reject" [id] ((handlers/admin-required handlers/reject-mission-update) id))
+  (GET "/updates" request ((handlers/admin-required handlers/get-mission-updates) request))
+  (PUT "/updates/:id/approve" [id :as request] ((handlers/admin-required (fn [_] (handlers/approve-mission-update id))) request))
+  (PUT "/updates/:id/reject" [id :as request] ((handlers/admin-required (fn [_] (handlers/reject-mission-update id))) request))
 
   ;; Admin endpoints
-  (POST "/api/admin/login" request (handlers/admin-login request))
-  (POST "/api/admin/setup-password" request (handlers/setup-admin-password request))
-  (GET "/api/admin/status" request (handlers/check-admin-status request))
-  (GET "/api/admin/users" request ((handlers/admin-required handlers/list-admin-users) request))
-  (POST "/api/admin/users" request ((handlers/admin-required handlers/create-admin-user) request))
-  (DELETE "/api/admin/users/:email" [email :as request] ((handlers/admin-required handlers/delete-admin-user) email))
+  (POST "/admin/login" request (handlers/admin-login request))
+  (POST "/admin/setup-password" request (handlers/setup-admin-password request))
+  (GET "/admin/status" request (handlers/check-admin-status request))
+  (GET "/admin/users" request ((handlers/admin-required handlers/list-admin-users) request))
+  (POST "/admin/users" request ((handlers/admin-required handlers/create-admin-user) request))
+  (DELETE "/admin/users/:email" [email :as request] ((handlers/admin-required (fn [_] (handlers/delete-admin-user email))) request))
   
   ;; Health check
   (GET "/health" []
@@ -111,7 +111,7 @@
       (response {:status "healthy" :missions_loaded mission-count})))
   
   ;; CORS preflight handler - handle OPTIONS requests for all API endpoints
-  (OPTIONS "/api/*" []
+  (OPTIONS "/*" []
     (-> (response "")
         (assoc-in [:headers "Access-Control-Allow-Origin"] "*")
         (assoc-in [:headers "Access-Control-Allow-Methods"] "GET, POST, PUT, DELETE, OPTIONS")
