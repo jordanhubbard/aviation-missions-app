@@ -2,8 +2,8 @@
   (:require [cheshire.core :as json]
             [buddy.hashers :as hashers]
             [clojure.java.io :as io]
-            [clojure.tools.logging :as log])
-  (:import [java.io File]))
+            [clojure.string :as str]
+            [clojure.tools.logging :as log]))
 
 (def admins-file-path (or (System/getenv "ADMINS_FILE") "./data/admins.json"))
 
@@ -51,8 +51,8 @@
   [email]
   (when email
     (let [admins (read-admins)
-          normalized-email (clojure.string/lower-case email)]
-      (first (filter #(= (clojure.string/lower-case (:email %)) normalized-email) admins)))))
+          normalized-email (str/lower-case email)]
+      (first (filter #(= (str/lower-case (:email %)) normalized-email) admins)))))
 
 (defn admin-exists?
   "Check if an admin with the given email exists"
