@@ -284,7 +284,7 @@ jobs:
       - name: Test API endpoints
         run: |
           echo "Testing missions API..."
-          missions=$(curl -s http://localhost:8080/api/missions)
+          missions=$(curl -s http://localhost:8080/missions)
           
           if echo "$missions" | grep -q "missions"; then
             echo "✅ Missions API working"
@@ -294,7 +294,7 @@ jobs:
           fi
           
           echo "Testing admin login..."
-          login=$(curl -s -X POST http://localhost:8080/api/admin/login \
+          login=$(curl -s -X POST http://localhost:8080/admin/login \
             -H "Content-Type: application/json" \
             -d '{"email":"admin@aviation-missions.app","password":"test"}')
           
@@ -428,7 +428,7 @@ jobs:
           # Test concurrent requests
           echo "Testing concurrent load..."
           for i in {1..50}; do
-            curl -s http://localhost:8080/api/missions > /dev/null &
+            curl -s http://localhost:8080/missions > /dev/null &
           done
           wait
           
