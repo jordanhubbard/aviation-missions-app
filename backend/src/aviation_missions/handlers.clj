@@ -356,33 +356,54 @@
 
 ;; Admin authentication
 (defn admin-login
-  "Admin login using admins.json authentication"
+  "Admin login - supports both email-based and simple username/password"
   [request]
   (try
     (let [credentials (:body request)
+          ;; Support both :admin_name (for tests/simple auth) and :email (for admin-auth)
+          admin-name (:admin_name credentials)
           email (:email credentials)
-          password (:password credentials)]
-      (log/info "Admin login attempt for:" email)
+          password (:password credentials)
+          ;; Use simple auth if admin_name is provided, otherwise use admin-auth
+          use-simple-auth? (some? admin-name)]
       
-      (if-let [admin (admin-auth/authenticate-admin email password)]
-        (if (:first_login admin)
-          ;; First login - require password setup
-          (-> (response {:first_login true 
-                        :email (:email admin)
-                        :name (:name admin)
-                        :message "Please set your password"})
-              (status 200))
-          ;; Regular login - create session
-          (let [token (db/create-admin-session! (:email admin))]
-            (log/info "Admin login successful:" (:email admin))
-            (response {:token token 
-                      :email (:email admin)
-                      :name (:name admin)
-                      :first_login false})))
+      (if use-simple-auth?
+        ;; Simple username/password authentication (for tests and simple deployments)
+        (let [admin-user (or (System/getenv "ADMIN_USERNAME") "admin")
+              admin-pass (or (System/getenv "ADMIN_PASSWORD") "aviation123")]
+          (log/info "Admin login attempt (simple auth) for:" admin-name)
+          (if (and (= admin-name admin-user) (= password admin-pass))
+            (let [token (db/create-admin-session! admin-name)]
+              (log/info "Admin login successful:" admin-name)
+              (response {:token token :admin_name admin-name}))
+            (do
+              (log/warn "Admin login failed for:" admin-name)
+              (-> (response {:error "Invalid credentials"})
+                  (status 401)))))
+        
+        ;; Email-based authentication using admin-auth
         (do
-          (log/warn "Admin login failed for:" email)
-          (-> (response {:error "Invalid credentials"})
-              (status 401)))))
+          (log/info "Admin login attempt (email auth) for:" email)
+          (if-let [admin (admin-auth/authenticate-admin email password)]
+            (if (:first_login admin)
+              ;; First login - require password setup
+              (-> (response {:first_login true 
+                            :email (:email admin)
+                            :name (:name admin)
+                            :message "Please set your password"})
+                  (status 200))
+              ;; Regular login - create session
+              (let [token (db/create-admin-session! (:email admin))]
+                (log/info "Admin login successful:" (:email admin))
+                (response {:token token 
+                          :email (:email admin)
+                          :name (:name admin)
+                          :admin_name (:email admin) ;; for backward compatibility
+                          :first_login false})))
+            (do
+              (log/warn "Admin login failed for:" email)
+              (-> (response {:error "Invalid credentials"})
+                  (status 401)))))))
     (catch Exception e
       (log/error e "Admin login error")
       (-> (response {:error "Login failed" :details (.getMessage e)})
