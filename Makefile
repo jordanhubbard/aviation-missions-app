@@ -54,7 +54,7 @@ build:
 .PHONY: lint
 lint:
 	@echo "🔍 Running comprehensive code analysis in Docker containers..."
-	@echo "📋 Tools: clj-kondo (Clojure), ESLint (JavaScript/React)"
+	@echo "📋 Tools: clj-kondo (Clojure), ESLint (JavaScript/React), Contrast Checker (CSS)"
 	@echo "Backend Clojure files:"
 	docker run --rm -v $(PWD):/workspace -w /workspace cljkondo/clj-kondo:latest clj-kondo --lint backend/src
 	@echo "Frontend JavaScript/React files:"
@@ -74,6 +74,8 @@ lint:
 		}" > .eslintrc.json && \
 		echo "Running ESLint on JavaScript files..." && \
 		npx eslint frontend/resources/public/js/app.js || echo "ESLint completed with warnings/errors"'
+	@echo "Checking color contrast (WCAG AA):"
+	@$(MAKE) check-contrast
 	@echo "✅ Linting analysis completed successfully!"
 
 # Check CSS color contrast for accessibility (WCAG AA compliance)
