@@ -76,6 +76,19 @@ lint:
 		npx eslint frontend/resources/public/js/app.js || echo "ESLint completed with warnings/errors"'
 	@echo "✅ Linting analysis completed successfully!"
 
+# Check CSS color contrast for accessibility (WCAG AA compliance)
+.PHONY: check-contrast
+check-contrast:
+	@echo "🎨 Checking color contrast ratios (WCAG AA compliance)..."
+	docker run --rm -v $(PWD):/workspace -w /workspace node:18-alpine sh -c '\
+		node scripts/check-contrast.js frontend/resources/public/css/styles.css'
+
+# Run accessibility checks
+.PHONY: lint-a11y
+lint-a11y: check-contrast
+	@echo "♿ Running accessibility linting..."
+	@echo "✅ Accessibility checks completed!"
+
 # Start the application in production mode
 .PHONY: start
 start: build
