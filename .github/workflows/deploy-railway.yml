@@ -5,30 +5,36 @@ on:
     branches: [ main ]
   workflow_dispatch: # Allow manual triggers
 
-env:
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
 jobs:
   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
     environment: railway-production
-    if: ${{ env.RAILWAY_TOKEN != '' }}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Skip deployment (RAILWAY_TOKEN not set)
+        if: ${{ env.RAILWAY_TOKEN == '' }}
+        run: |
+          echo "RAILWAY_TOKEN is not configured; skipping Railway deployment."
+
       - name: Install Railway CLI
+        if: ${{ env.RAILWAY_TOKEN != '' }}
         run: |
           npm install -g @railway/cli
 
       - name: Deploy to Railway
+        if: ${{ env.RAILWAY_TOKEN != '' }}
         run: |
           echo "🚂 Deploying to Railway..."
           railway up --service aviation-missions-app || railway up
           echo "✅ Deployment triggered successfully!"
 
       - name: Verify deployment
+        if: ${{ env.RAILWAY_TOKEN != '' }}
         run: |
           echo "⏳ Waiting for deployment to complete..."
           sleep 30
