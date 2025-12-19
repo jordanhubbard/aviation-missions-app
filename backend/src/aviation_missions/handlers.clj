@@ -193,10 +193,9 @@
       (if (and (db/get-mission-by-id mission-id)
                (:author_name comment-data)
                (:content comment-data))
-        (do
-          (let [comment (db/add-comment! mission-id comment-data)]
-            (-> (response {:comment comment})
-                (status 201))))
+        (let [comment (db/add-comment! mission-id comment-data)]
+          (-> (response {:comment comment})
+              (status 201)))
         (-> (response {:error "Mission not found or missing required fields"})
             (status 400))))
     (catch Exception e
@@ -245,10 +244,9 @@
                (:pilot_name rating-data)
                (:rating rating-data)
                (contains? #{"up" "down"} (:rating rating-data)))
-        (do
-          (let [rating (db/add-or-update-rating! mission-id rating-data)]
-            (-> (response {:rating rating})
-                (status 201))))
+        (let [rating (db/add-or-update-rating! mission-id rating-data)]
+          (-> (response {:rating rating})
+              (status 201)))
         (-> (response {:error "Mission not found or invalid rating data"})
             (status 400))))
     (catch Exception e
@@ -293,10 +291,9 @@
           completion-data (:body request)]
       (if (and (db/get-mission-by-id mission-id)
                (:pilot_name completion-data))
-        (do
-          (let [completion (db/mark-mission-completed! mission-id completion-data)]
-            (-> (response {:completion completion})
-                (status 201))))
+        (let [completion (db/mark-mission-completed! mission-id completion-data)]
+          (-> (response {:completion completion})
+              (status 201)))
         (-> (response {:error "Mission not found or missing required fields"})
             (status 400))))
     (catch Exception e

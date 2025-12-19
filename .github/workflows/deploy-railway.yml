@@ -10,6 +10,7 @@ jobs:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
     environment: railway-production
+    if: ${{ secrets.RAILWAY_TOKEN != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
