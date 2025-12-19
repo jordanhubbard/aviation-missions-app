@@ -5,12 +5,15 @@ on:
     branches: [ main ]
   workflow_dispatch: # Allow manual triggers
 
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
 jobs:
   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
     environment: railway-production
-    if: ${{ secrets.RAILWAY_TOKEN != '' }}
+    if: ${{ env.RAILWAY_TOKEN != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,16 +23,12 @@ jobs:
           npm install -g @railway/cli
 
       - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           echo "🚂 Deploying to Railway..."
           railway up --service aviation-missions-app || railway up
           echo "✅ Deployment triggered successfully!"
 
       - name: Verify deployment
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           echo "⏳ Waiting for deployment to complete..."
           sleep 30
