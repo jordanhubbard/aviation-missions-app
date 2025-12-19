@@ -194,9 +194,9 @@
                (:author_name comment-data)
                (:content comment-data))
         (do
-          (db/add-comment! mission-id comment-data)
-          (-> (response {:message "Comment added successfully"})
-              (status 201)))
+          (let [comment (db/add-comment! mission-id comment-data)]
+            (-> (response {:comment comment})
+                (status 201))))
         (-> (response {:error "Mission not found or missing required fields"})
             (status 400))))
     (catch Exception e
@@ -246,9 +246,9 @@
                (:rating rating-data)
                (contains? #{"up" "down"} (:rating rating-data)))
         (do
-          (db/add-or-update-rating! mission-id rating-data)
-          (-> (response {:message "Rating updated successfully"})
-              (status 201)))
+          (let [rating (db/add-or-update-rating! mission-id rating-data)]
+            (-> (response {:rating rating})
+                (status 201))))
         (-> (response {:error "Mission not found or invalid rating data"})
             (status 400))))
     (catch Exception e
@@ -259,8 +259,12 @@
   "Get a user's rating for a mission"
   [id pilot-name]
   (try
-    (let [mission-id (Integer/parseInt id)]
-      (if-let [rating (db/get-user-rating mission-id pilot-name)]
+    (let [mission-id (Integer/parseInt id)
+          decoded-name (try
+                         (java.net.URLDecoder/decode (str pilot-name) "UTF-8")
+                         (catch Exception _e
+                           pilot-name))]
+      (if-let [rating (db/get-user-rating mission-id decoded-name)]
         (response {:rating (:rating rating)})
         (response {:rating nil})))
     (catch Exception e
@@ -288,12 +292,11 @@
     (let [mission-id (Integer/parseInt id)
           completion-data (:body request)]
       (if (and (db/get-mission-by-id mission-id)
-               (:pilot_name completion-data)
-               (:completion_date completion-data))
+               (:pilot_name completion-data))
         (do
-          (db/mark-mission-completed! mission-id completion-data)
-          (-> (response {:message "Mission marked as completed"})
-              (status 201)))
+          (let [completion (db/mark-mission-completed! mission-id completion-data)]
+            (-> (response {:completion completion})
+                (status 201))))
         (-> (response {:error "Mission not found or missing required fields"})
             (status 400))))
     (catch Exception e

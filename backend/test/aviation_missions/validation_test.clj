@@ -107,8 +107,8 @@
       (is (not (s/valid? ::handlers/mission-data whitespace-mission)))))
 
   (testing "Numeric edge cases"
-    (is (s/valid? ::handlers/difficulty Integer/MIN_VALUE))  ; Should fail range check
-    (is (s/valid? ::handlers/difficulty Integer/MAX_VALUE))  ; Should fail range check
+    (is (not (s/valid? ::handlers/difficulty Integer/MIN_VALUE)))  ; Should fail range check
+    (is (not (s/valid? ::handlers/difficulty Integer/MAX_VALUE)))  ; Should fail range check
     (is (not (s/valid? ::handlers/difficulty 0)))
     (is (not (s/valid? ::handlers/difficulty 11)))))
 

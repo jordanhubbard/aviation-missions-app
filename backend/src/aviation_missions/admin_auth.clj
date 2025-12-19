@@ -121,7 +121,8 @@
         updated-admins (vec (remove #(= (clojure.string/lower-case (:email %))
                                        (clojure.string/lower-case email))
                                    admins))]
-    (write-admins! updated-admins)))
+    (write-admins! updated-admins)
+    nil))
 
 (defn list-admins
   "List all admins (without password hashes)"

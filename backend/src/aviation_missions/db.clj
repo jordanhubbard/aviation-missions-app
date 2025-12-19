@@ -4,6 +4,38 @@
             [clj-time.coerce :as coerce]
             [clojure.tools.logging :as log]))
 
+(def ^:private default-pilot-experience "Beginner (< 100 hours)")
+
+(def ^:private valid-categories
+  #{"Training" "Proficiency" "Cross-Country" "Emergency"})
+
+(defn- generated-id
+  "Best-effort extraction of a generated PK from clojure.java.jdbc insert! results." 
+  [insert-result]
+  (some-> insert-result first vals first))
+
+(defn- today-sql-date
+  []
+  (java.sql.Date/valueOf (java.time.LocalDate/now)))
+
+(defn- monotonic-updated-at
+  "Ensure updated_at advances even when operations happen within the same millisecond
+  (H2 timestamps are typically millisecond resolution)."
+  [previous-updated-at]
+  (let [now (time/now)
+        prev (when previous-updated-at (coerce/from-sql-time previous-updated-at))
+        chosen (if (and prev (not (time/after? now prev)))
+                 (time/plus prev (time/millis 1))
+                 now)]
+    (coerce/to-timestamp chosen)))
+
+(defn- validate-mission-data!
+  [mission-data]
+  (when-let [category (:category mission-data)]
+    (when-not (contains? valid-categories category)
+      (throw (ex-info "Invalid mission category" {:category category}))))
+  true)
+
 (def db-spec
   {:classname "org.h2.Driver"
    :subprotocol "h2"
@@ -246,48 +278,88 @@
       GROUP BY m.id" id])))
 
 (defn create-mission! [mission-data]
-  (let [result (jdbc/insert! db-spec :missions 
-                 (assoc mission-data :created_at (coerce/to-timestamp (time/now))))
-        new-id (-> result first vals first)] ; H2 returns {:generated_key id} or similar
+  (validate-mission-data! mission-data)
+  (let [row (-> mission-data
+                (select-keys [:title
+                             :category
+                             :difficulty
+                             :objective
+                             :mission_description
+                             :why_description
+                             :notes
+                             :route
+                             :suggested_route
+                             :pilot_experience
+                             :special_challenges])
+                (assoc :pilot_experience (or (:pilot_experience mission-data) default-pilot-experience)
+                       :created_at (coerce/to-timestamp (time/now))
+                       :updated_at (coerce/to-timestamp (time/now))))
+        result (jdbc/insert! db-spec :missions row)
+        new-id (generated-id result)]
     (get-mission-by-id new-id)))
 
 (defn update-mission! [id mission-data]
-  (jdbc/update! db-spec :missions 
-    (assoc mission-data :updated_at (coerce/to-timestamp (time/now)))
-    ["id = ?" id])
-  (get-mission-by-id id))
+  (validate-mission-data! mission-data)
+  (let [existing (get-mission-by-id id)
+        update-row (-> mission-data
+                       (select-keys [:title
+                                    :category
+                                    :difficulty
+                                    :objective
+                                    :mission_description
+                                    :why_description
+                                    :notes
+                                    :route
+                                    :suggested_route
+                                    :pilot_experience
+                                    :special_challenges])
+                       (assoc :pilot_experience (or (:pilot_experience mission-data)
+                                                    (:pilot_experience existing)
+                                                    default-pilot-experience)
+                              :updated_at (monotonic-updated-at (:updated_at existing))))]
+    (jdbc/update! db-spec :missions update-row ["id = ?" id])
+    (get-mission-by-id id)))
 
 (defn delete-mission! [id]
   (jdbc/delete! db-spec :missions ["id = ?" id]))
 
 ;; Comment operations
+(defn get-comment-by-id [id]
+  (first (jdbc/query db-spec
+    ["SELECT * FROM comments WHERE id = ?" id])))
+
 (defn get-comments-for-mission [mission-id]
   (jdbc/query db-spec
     ["SELECT * FROM comments WHERE mission_id = ? ORDER BY created_at DESC" mission-id]))
 
 (defn add-comment! [mission-id comment-data]
-  (jdbc/insert! db-spec :comments
-    (assoc comment-data 
-           :mission_id mission-id
-           :created_at (coerce/to-timestamp (time/now)))))
+  (let [result (jdbc/insert! db-spec :comments
+                 (assoc comment-data
+                        :mission_id mission-id
+                        :created_at (coerce/to-timestamp (time/now))))
+        new-id (generated-id result)]
+    (get-comment-by-id new-id)))
 
 ;; Rating operations (thumbs up/down)
+(declare get-user-rating)
+
 (defn add-or-update-rating! [mission-id rating-data]
   (let [existing (first (jdbc/query db-spec
                           ["SELECT id FROM mission_ratings WHERE mission_id = ? AND pilot_name = ?" 
                            mission-id (:pilot_name rating-data)]))]
     (if existing
-      (jdbc/update! db-spec :mission_ratings 
+      (jdbc/update! db-spec :mission_ratings
         {:rating (:rating rating-data)}
         ["id = ?" (:id existing)])
       (jdbc/insert! db-spec :mission_ratings
-        (assoc rating-data 
+        (assoc rating-data
                :mission_id mission-id
-               :created_at (coerce/to-timestamp (time/now)))))))
+               :created_at (coerce/to-timestamp (time/now)))))
+    (get-user-rating mission-id (:pilot_name rating-data))))
 
 (defn get-user-rating [mission-id pilot-name]
   (first (jdbc/query db-spec
-    ["SELECT rating FROM mission_ratings WHERE mission_id = ? AND pilot_name = ?" 
+    ["SELECT mission_id, pilot_name, rating, created_at FROM mission_ratings WHERE mission_id = ? AND pilot_name = ?" 
      mission-id pilot-name])))
 
 ;; Review operations
@@ -302,15 +374,22 @@
            :created_at (coerce/to-timestamp (time/now)))))
 
 ;; Completion tracking
+(defn get-completion-by-id [id]
+  (first (jdbc/query db-spec
+    ["SELECT * FROM mission_completions WHERE id = ?" id])))
+
 (defn get-completions-for-mission [mission-id]
   (jdbc/query db-spec
     ["SELECT * FROM mission_completions WHERE mission_id = ? ORDER BY created_at DESC" mission-id]))
 
 (defn mark-mission-completed! [mission-id completion-data]
-  (jdbc/insert! db-spec :mission_completions
-    (assoc completion-data 
-           :mission_id mission-id
-           :created_at (coerce/to-timestamp (time/now)))))
+  (let [result (jdbc/insert! db-spec :mission_completions
+                 (-> completion-data
+                     (assoc :mission_id mission-id
+                            :completion_date (or (:completion_date completion-data) (today-sql-date))
+                            :created_at (coerce/to-timestamp (time/now)))))
+        new-id (generated-id result)]
+    (get-completion-by-id new-id)))
 
 ;; Submission operations
 (defn get-all-submissions []
@@ -388,7 +467,7 @@
 
 (defn validate-admin-session [token]
   (first (jdbc/query db-spec
-    ["SELECT admin_name FROM admin_sessions 
+    ["SELECT admin_name, created_at, expires_at FROM admin_sessions 
       WHERE session_token = ? AND expires_at > CURRENT_TIMESTAMP" token])))
 
 ;; JSON Import/Export functions

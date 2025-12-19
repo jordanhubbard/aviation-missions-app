@@ -173,19 +173,21 @@
     (admin-auth/create-admin! "Findable" "findable@example.com")
     (is (admin-auth/admin-exists? "findable@example.com") "Should be able to find created admin")))
 
-(deftest test-delete-admin
+(deftest test-delete-existing-admin
   (testing "delete existing admin"
     (admin-auth/delete-admin! "test@example.com")
-    (is (not (admin-auth/admin-exists? "test@example.com")) "Admin should be deleted"))
-  
+    (is (not (admin-auth/admin-exists? "test@example.com")) "Admin should be deleted")))
+
+(deftest test-delete-nonexistent-admin
   (testing "delete non-existent admin does not error"
-    (is (nil? (admin-auth/delete-admin! "nonexistent@example.com")) 
-        "Should not error on non-existent admin"))
-  
+    (is (nil? (admin-auth/delete-admin! "nonexistent@example.com"))
+        "Should not error on non-existent admin")))
+
+(deftest test-admins-count-decrements-after-deletion
   (testing "admins list after deletion"
     (let [initial-count (count (admin-auth/read-admins))]
       (admin-auth/delete-admin! "test@example.com")
-      (is (= (dec initial-count) (count (admin-auth/read-admins))) 
+      (is (= (dec initial-count) (count (admin-auth/read-admins)))
           "Should have one less admin"))))
 
 (deftest test-list-admins
@@ -201,12 +203,14 @@
 
 (deftest test-count-admins
   (testing "count admins"
-    (is (= 2 (admin-auth/count-admins)) "Should count 2 admins"))
-  
+    (is (= 2 (admin-auth/count-admins)) "Should count 2 admins")))
+
+(deftest test-count-admins-after-adding-admin
   (testing "count after adding admin"
     (admin-auth/create-admin! "Fourth" "fourth@example.com")
-    (is (= 3 (admin-auth/count-admins)) "Should count 3 admins"))
-  
+    (is (= 3 (admin-auth/count-admins)) "Should count 3 admins")))
+
+(deftest test-count-admins-after-deleting-admin
   (testing "count after deleting admin"
     (admin-auth/delete-admin! "test@example.com")
     (is (= 1 (admin-auth/count-admins)) "Should count 1 admin")))

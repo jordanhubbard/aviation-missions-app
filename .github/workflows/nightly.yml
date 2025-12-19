@@ -96,12 +96,19 @@ jobs:
         run: |
           echo "Testing fresh database initialization..."
           docker run -d --name fresh-db-test \
+            -p 8080:3000 \
             -v $(pwd)/test-fresh-db:/app/data \
             aviation-missions:nightly
-          
-          sleep 10
-          
-          docker logs fresh-db-test | grep "missions_loaded" || exit 1
+
+          echo "Waiting for /health to become ready..."
+          for i in {1..30}; do
+            if curl -fs http://localhost:8080/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fs http://localhost:8080/health | grep '"missions_loaded"' || (docker logs fresh-db-test && exit 1)
           docker rm -f fresh-db-test
           rm -rf test-fresh-db
           echo "✅ Fresh database initialization successful"
@@ -196,6 +203,17 @@ jobs:
           docker run -d --name health-monitor \
             -p 8080:3000 \
             aviation-missions:health
+
+          echo "Waiting for /health to become ready..."
+          for i in {1..30}; do
+            if curl -fs http://localhost:8080/health >/dev/null 2>&1; then
+              echo "✅ Initial health check passed"
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fs http://localhost:8080/health >/dev/null 2>&1 || (echo "❌ App never became healthy" && docker logs health-monitor && docker rm -f health-monitor && exit 1)
           
           echo "Monitoring application health for 5 minutes..."
           
