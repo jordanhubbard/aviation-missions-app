@@ -186,7 +186,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Set environment variables for Railway compatibility
-ENV PORT=3000
 ENV API_PORT=3000
 
 # Start the application
