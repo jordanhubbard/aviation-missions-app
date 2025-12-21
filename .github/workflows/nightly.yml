@@ -124,12 +124,34 @@ jobs:
             -v $(pwd)/test-persist-db:/app/data \
             aviation-missions:nightly
           
-          sleep 10
+          echo "Waiting for /health to become ready..."
+          for i in {1..30}; do
+            if curl -fs http://localhost:8080/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
           
-          # Create a test mission
-          curl -X POST http://localhost:8080/api/missions \
+          echo "Logging in as admin (default credentials)..."
+          TOKEN=$(curl -fs http://localhost:8080/admin/login \
             -H "Content-Type: application/json" \
-            -d '{"title":"Persistence Test","category":"Training","difficulty":5,"objective":"Test","mission_description":"Test","why_description":"Test"}' || true
+            -d '{"admin_name":"admin","password":"aviation123"}' \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("token",""))')
+
+          if [ -z "$TOKEN" ]; then
+            echo "❌ Failed to obtain admin token"
+            docker logs persist-test-1
+            docker rm -f persist-test-1
+            sudo rm -rf test-persist-db
+            exit 1
+          fi
+
+          echo "Creating a mission (admin path)..."
+          curl -fs http://localhost:8080/missions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d '{"title":"Persistence Test","category":"Training","difficulty":5,"objective":"Test","mission_description":"Test","why_description":"Test"}' \
+            >/dev/null
           
           docker rm -f persist-test-1
           
@@ -139,10 +161,17 @@ jobs:
             -v $(pwd)/test-persist-db:/app/data \
             aviation-missions:nightly
           
-          sleep 10
+          echo "Waiting for /health to become ready..."
+          for i in {1..30}; do
+            if curl -fs http://localhost:8080/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
           
           # Check data persisted
-          MISSION_COUNT=$(curl -s http://localhost:8080/api/missions | grep -o '"missions"' | wc -l)
+          MISSION_COUNT=$(curl -fs http://localhost:8080/missions \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin); ms=d.get("missions") or []; print(sum(1 for m in ms if (m.get("title") or "") == "Persistence Test"))')
           
           docker rm -f persist-test-2
           sudo rm -rf test-persist-db
