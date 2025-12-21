@@ -110,7 +110,7 @@ jobs:
 
           curl -fs http://localhost:8080/health | grep '"missions_loaded"' || (docker logs fresh-db-test && exit 1)
           docker rm -f fresh-db-test
-          rm -rf test-fresh-db
+          sudo rm -rf test-fresh-db
           echo "✅ Fresh database initialization successful"
 
       - name: Test database persistence
@@ -145,7 +145,7 @@ jobs:
           MISSION_COUNT=$(curl -s http://localhost:8080/api/missions | grep -o '"missions"' | wc -l)
           
           docker rm -f persist-test-2
-          rm -rf test-persist-db
+          sudo rm -rf test-persist-db
           
           if [ "$MISSION_COUNT" -gt 0 ]; then
             echo "✅ Database persistence test passed"
